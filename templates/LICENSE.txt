@@ -1,0 +1,51 @@
+License for the contents of this directory
+==========================================
+
+All legal agreement templates in this "templates" directory are by Common Paper,
+Inc. and are licensed under the Creative Commons Attribution 4.0 International
+License (CC BY 4.0).
+
+  License summary: https://creativecommons.org/licenses/by/4.0/
+  Full legal code: https://creativecommons.org/licenses/by/4.0/legalcode
+
+Source
+------
+
+The files were copied without modification from Common Paper's public GitHub
+repositories (https://github.com/CommonPaper):
+
+  AI-Addendum.md                  https://github.com/CommonPaper/AI-Addendum
+  BAA.md                          https://github.com/CommonPaper/BAA
+  CSA.md                          https://github.com/CommonPaper/CSA
+  design-partner-agreement.md     https://github.com/CommonPaper/Design-Partner-Agreement
+  DPA.md                          https://github.com/CommonPaper/DPA
+  Mutual-NDA.md                   https://github.com/CommonPaper/Mutual-NDA
+  Mutual-NDA-coverpage.md         https://github.com/CommonPaper/Mutual-NDA
+  Partnership-Agreement.md        https://github.com/CommonPaper/Partnership-Agreement
+  Pilot-Agreement.md              https://github.com/CommonPaper/Pilot-Agreement
+  psa.md                          https://github.com/CommonPaper/PSA
+  sla.md                          https://github.com/CommonPaper/SLA
+  Software-License-Agreement.md   https://github.com/CommonPaper/Software-License-Agreement
+
+The standard versions of these agreements are published at
+https://commonpaper.com/standards/.
+
+Attribution
+-----------
+
+Under CC BY 4.0 you may copy, redistribute, adapt and build upon these
+templates for any purpose, including commercially, provided that you:
+
+  - give appropriate credit to Common Paper,
+  - provide a link to the CC BY 4.0 license, and
+  - indicate if changes were made.
+
+Documents that Prelegal generates from these templates are adaptations and must
+carry the same attribution, for example:
+
+  "Based on the Common Paper <Agreement Name>, used under CC BY 4.0
+  (https://creativecommons.org/licenses/by/4.0/). Modified by Prelegal."
+
+Common Paper does not endorse Prelegal or any document produced with it. The
+templates are provided "as is" without warranties of any kind and do not
+constitute legal advice.
