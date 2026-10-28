@@ -19,6 +19,8 @@ Work is tracked in Jira (project **PL**).
 | PL-2 | A dataset of legal agreement templates the system can later fill in for users | ✅ Done |
 | PL-3 | Prototype of a Mutual NDA creator: the user fills in a form, sees the completed NDA and downloads it | ✅ Done |
 | PL-4 | Technical foundation for V1: FastAPI backend, temporary SQLite database, Docker container and start/stop scripts, placeholder sign in / sign up | ✅ Done |
+| PL-5 | AI chat for the Mutual NDA: a freeform chat fills in the NDA instead of a form | ✅ Done |
+| PL-6 | All 11 agreement types via AI chat, with help choosing the right one | ✅ Done |
 
 ### Agreement templates (PL-2)
 
@@ -39,21 +41,20 @@ template:
 - Pilot Agreement
 - AI Addendum
 
-Only the Mutual NDA can be filled in so far. The other templates are ready for future
-agreement creators.
+All of them can be drafted. [`documents.json`](documents.json) describes the fields of each
+one, which drive the AI chat, the form and the generated cover page.
 
-### Mutual NDA creator (PL-3)
+### Drafting an agreement (PL-3, PL-5, PL-6)
 
-A web app at `/nda` where the user:
+A web app at `/draft` where the user:
 
-1. Fills in a form with the purpose, effective date, MNDA term, term of confidentiality,
-   governing law, jurisdiction, optional modifications, and the details of both parties.
-2. Sees the Common Paper Mutual NDA (cover page and Standard Terms) with their details filled
-   in, updating as they type.
+1. Tells an AI assistant what they need. It picks the right agreement, or, for a document
+   Prelegal cannot draft, says so and offers the closest one it can.
+2. Answers the assistant's questions about the parties and the terms, or fills in the fields
+   in a form instead. The agreement (cover page and Standard Terms) updates as they go.
 3. Downloads the completed agreement as a PDF, ready to sign.
 
-Filling in the NDA and creating the PDF happen in the browser. Nothing the user types is
-sent to a server.
+The chat goes through the backend to an LLM; the preview and the PDF are made in the browser.
 
 ### V1 foundation (PL-4)
 
@@ -85,6 +86,7 @@ database.
 ```
 prelegal/
 ├── catalog.json   # Name, description and filename of every template
+├── documents.json # The supported documents and their fields, shared by frontend and backend
 ├── templates/     # Common Paper agreement templates (markdown, CC BY 4.0)
 ├── frontend/      # Next.js web app, exported as static files
 ├── backend/       # FastAPI app: the API and the server for the frontend
@@ -95,20 +97,20 @@ prelegal/
 ## Frontend
 
 The frontend is a [Next.js](https://nextjs.org) 16 app (App Router, TypeScript, Tailwind
-CSS v4) in [`frontend/`](frontend/). It reads the agreement text from `templates/` at build
-time, so `templates/` is the single source of truth. The app is exported as static files
-(`output: "export"`) that the backend serves. PDFs are generated in the browser with
-[`@react-pdf/renderer`](https://react-pdf.org).
+CSS v4) in [`frontend/`](frontend/). It reads the agreement text from `templates/` and the
+fields from `documents.json` at build time, so they are the single source of truth. The app
+is exported as static files (`output: "export"`) that the backend serves. PDFs are
+generated in the browser with [`@react-pdf/renderer`](https://react-pdf.org).
 
 ### Getting started
 
 Requires **Node.js 24**. Run these from the `frontend/` directory in a full checkout of the
-repository, since the app reads `../templates`:
+repository, since the app reads `../templates` and `../documents.json`:
 
 ```bash
 cd frontend
 npm install
-npm run dev          # http://localhost:3000/nda
+npm run dev          # http://localhost:3000/draft; the chat needs the backend
 ```
 
 | Command | What it does |
@@ -130,7 +132,7 @@ first (`npm run build` in `frontend/`), then:
 
 ```bash
 cd backend
-uv run uvicorn --factory app.main:create_app --reload   # http://localhost:8000
+uv run --env-file ../.env uvicorn --factory app.main:create_app --reload   # http://localhost:8000
 ```
 
 | Command | What it does |

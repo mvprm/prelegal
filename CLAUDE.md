@@ -64,24 +64,30 @@ Jira project **PL**. Branches are `feature/PL-N-slug`, merged into `main` with `
 
 ### PL-2: Legal templates (done)
 - Common Paper agreement templates in `templates/` (markdown, CC BY 4.0), listed in `catalog.json`.
-- Only the Mutual NDA templates are used so far.
+- All of them are used since PL-6; their fields are described in `documents.json`.
 
 ### PL-3: Mutual NDA creator prototype (done)
-- Next.js 16 app in `frontend/`. Form at `/nda` with a live preview and PDF download (`@react-pdf/renderer`).
-- Filling, parsing and PDF generation run in the browser (`src/lib/nda/`, `src/components/nda/`).
+- Next.js 16 app in `frontend/`. Live preview and PDF download (`@react-pdf/renderer`); generalized to all documents at `/draft` in PL-6.
+- Filling, parsing and PDF generation run in the browser (`src/lib/documents/`, `src/components/documents/`).
 - Templates are read from `../templates` at build time, so builds need the full repo.
 - Tests: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run build` in `frontend/`.
 
 ### PL-4: V1 foundation (done)
-- **Backend** (`backend/`, uv, Python 3.13): `app/main.py` `create_app()` resets the DB on startup, mounts the API sub-app at `/api` (docs at `/api/docs`) and the static frontend at `/`. Add endpoints as routers in `app/api/`. Settings: `PRELEGAL_DB_PATH`, `PRELEGAL_STATIC_DIR`. Tests: `uv run pytest` (real temp SQLite, no mocks).
+- **Backend** (`backend/`, uv, Python 3.13): `app/main.py` `create_app()` resets the DB on startup, mounts the API sub-app at `/api` (docs at `/api/docs`) and the static frontend at `/`. Add endpoints as routers in `app/api/`. Settings: `PRELEGAL_DB_PATH`, `PRELEGAL_STATIC_DIR`, `PRELEGAL_DOCUMENTS_PATH`. Tests: `uv run pytest` (real temp SQLite; only the LLM is stubbed).
 - **Database**: SQLite `users` table. Schema in `app/schema.sql`; no migrations, since the DB is recreated every start.
 - **Auth (placeholder)**: `/signin` and `/signup` pages show "coming soon" and never call the API. `POST /api/auth/signup|signin` validate the body, then return 501. No sessions or password hashing yet.
 - **Frontend**: switched to a static export (`output: "export"`, `trailingSlash: true`), so no route handlers, server actions, rewrites or `cacheComponents`. Restyled with the brand palette; dark mode removed.
 - **Docker + scripts**: multi-stage `Dockerfile` (Node build, then Python runtime as non-root with a health check on `/api/health`). DB at `/data/prelegal.db` in the container. Start/stop scripts in `scripts/`.
 - **LLM**: `.env` (with `OPENROUTER_API_KEY`) is passed to the container via `--env-file`.
 
-### PL-5: AI chat for the Mutual NDA (done)
-- `/nda` has two tabs: "Chat with AI" (default) and "Edit fields" (the PL-3 form), both filling the same fields and live preview. The form is disabled while the AI replies.
-- `POST /api/nda/chat` (`app/api/nda.py`) is stateless: the browser sends the latest 40 messages, the fields and `today`, and gets `{reply, fields}`. The LLM returns Structured Outputs `{reply, updates}` (`app/nda.py`), where null means unchanged; the backend merges the updates and drops invalid ones, so it never returns fields it would reject.
-- `app/llm.py` `structured_completion()` wraps LiteLLM (Cerebras skill) and is stubbed in tests; `tests/test_nda_live.py` calls the real model and is skipped without a key. Run the backend locally with `uv run --env-file ../.env ...`.
-- Frontend: `src/lib/nda/chat.ts` (API client, greeting), `src/components/nda/useNdaChat.ts` and `NdaChat.tsx`. Chat history lives only in the page; refreshing starts over.
+### PL-5: AI chat for the Mutual NDA (done; generalized in PL-6)
+- Two tabs: "Chat with AI" (default) and "Edit fields", both filling the same values and live preview. The form is disabled while the AI replies. Chat history lives only in the page; refreshing starts over.
+- The chat is stateless and the LLM returns Structured Outputs where null means unchanged; the backend merges the updates and drops invalid ones, so it never returns values it would reject.
+- `app/llm.py` `structured_completion()` wraps LiteLLM (Cerebras skill) and is stubbed in tests (`monkeypatch` on `app.llm`); live tests call the real model and are skipped without a key. Run the backend locally with `uv run --env-file ../.env ...`.
+
+### PL-6: All document types (done)
+- `documents.json` (repo root) is the single spec for all 11 documents: Standard Terms file, party roles, fields (`text`/`longtext`/`date`/`choice`/`years`, `required`, `default` incl. `"today"`, `when` conditions). Values are a flat `Record<string, string>`; party fields are `party1.company` etc. Frontend `src/lib/documents/catalog.ts` and backend `app/documents.py` apply the same rules, so change both together. Docker copies it into both stages (`PRELEGAL_DOCUMENTS_PATH`).
+- `/draft` replaces `/nda`: the AI picks the document, or explains an unsupported one and offers the closest. `POST /api/chat` (`app/api/chat.py`) takes `{messages, documentId|null, values, today}` and returns `{reply, documentId, values}`.
+- `app/chat.py` `Assistant`: a selection schema until a document is chosen, then a per-document schema built from its fields (`updates`, `switchTo`). Replies are `reply` + required `question`; a question without "?" gets a fallback question about the next missing field. On the turn a document is chosen, a trailing system message makes the model capture details from the whole conversation.
+- Cover pages: the NDA fills its official template (`ndaCoverPage.ts`); the others are generated from the fields (`coverPage.ts`). Section titles (`header_N` spans) render bold. A frontend test checks that every `*_link` term in each template has a field.
+- The chat's focus returns to the message box after every reply.

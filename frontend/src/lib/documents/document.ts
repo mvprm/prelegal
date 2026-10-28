@@ -78,11 +78,23 @@ function toBlocks(
 
 const TERM_OPEN = /^<span\b[^>]*\bclass="[^"]*_link"[^>]*>$/;
 
+/** A section title in the Standard Terms, e.g. `<span class="header_3">Support.</span>`. */
+const HEADER_OPEN = /^<span\b[^>]*\bclass="header_\d"[^>]*>$/;
+
+/** How a <span> is rendered: as a defined term, in bold as a section title, or as plain text. */
+type SpanKind = "term" | "strong" | "other";
+
+function spanKind(openTag: string): SpanKind {
+  if (TERM_OPEN.test(openTag)) return "term";
+  if (HEADER_OPEN.test(openTag)) return "strong";
+  return "other";
+}
+
 function toInlines(nodes: PhrasingContent[], source: string): Inline[] {
   const result: Inline[] = [];
   // Inline HTML arrives as separate open/close tag nodes around the text, so a stack
   // collects the children of each open <span> until its closing tag.
-  const stack: { isTerm: boolean; children: Inline[] }[] = [];
+  const stack: { kind: SpanKind; children: Inline[] }[] = [];
   const current = () => (stack.length > 0 ? stack[stack.length - 1].children : result);
 
   for (const node of nodes) {
@@ -108,11 +120,11 @@ function toInlines(nodes: PhrasingContent[], source: string): Inline[] {
         break;
       case "html":
         if (/^<span\b/.test(node.value)) {
-          stack.push({ isTerm: TERM_OPEN.test(node.value), children: [] });
+          stack.push({ kind: spanKind(node.value), children: [] });
         } else if (node.value === "</span>" && stack.length > 0) {
           const span = stack.pop()!;
-          if (span.isTerm) current().push({ type: "term", children: mergeText(span.children) });
-          else current().push(...span.children);
+          if (span.kind === "other") current().push(...span.children);
+          else current().push({ type: span.kind, children: mergeText(span.children) });
         }
         // Any other tag is dropped; its text content is kept.
         break;

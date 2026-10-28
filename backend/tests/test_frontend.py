@@ -13,14 +13,14 @@ def test_serves_the_home_page(client: TestClient) -> None:
 
 
 def test_serves_pages_by_directory(client: TestClient) -> None:
-    assert client.get("/nda/").text == "NDA PAGE"
+    assert client.get("/draft/").text == "DRAFT PAGE"
 
 
 def test_redirects_to_the_trailing_slash_path(client: TestClient) -> None:
-    response = client.get("/nda", follow_redirects=False)
+    response = client.get("/draft", follow_redirects=False)
     assert response.status_code == 307
-    assert response.headers["location"].endswith("/nda/")
-    assert client.get("/nda").text == "NDA PAGE"
+    assert response.headers["location"].endswith("/draft/")
+    assert client.get("/draft").text == "DRAFT PAGE"
 
 
 def test_unknown_page_gets_the_exported_404_page(client: TestClient) -> None:

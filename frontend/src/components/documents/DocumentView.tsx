@@ -1,4 +1,4 @@
-import type { Block, Inline, ListItem } from "@/lib/nda/document";
+import type { Block, Inline, ListItem } from "@/lib/documents/document";
 
 /** Renders a parsed agreement as HTML, styled like a printed page. */
 export function DocumentView({ blocks }: { blocks: Block[] }) {

@@ -1,28 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { readTemplate } from "../templates";
-import { defaultFields, formatDate, type NdaFields } from "./fields";
-import { escapeMarkdown, fillCoverPage } from "./fill";
+import { readCatalog, readTemplate } from "../templates";
+import { defaultValues, findDocument, type Values } from "./catalog";
+import { escapeMarkdown } from "./markdown";
+import { fillNdaCoverPage } from "./ndaCoverPage";
 
 const template = readTemplate("Mutual-NDA-coverpage.md");
+const nda = findDocument(readCatalog(), "mutual-nda")!;
 
-const completeFields: NdaFields = {
-  ...defaultFields,
+const completeValues: Values = {
+  ...defaultValues(nda, "2026-10-27"),
   purpose: "Exploring a joint venture.",
-  effectiveDate: "2026-10-27",
-  mndaTerm: "expires",
-  mndaTermYears: 2,
-  confidentialityTerm: "years",
-  confidentialityYears: 3,
+  mndaTermYears: "2",
+  confidentialityYears: "3",
   governingLaw: "Delaware",
   jurisdiction: "courts located in New Castle, DE",
-  modifications: "",
-  party1: { name: "Jane Doe", title: "CEO", company: "Acme Inc.", noticeAddress: "jane@acme.com" },
-  party2: { name: "John Roe", title: "CTO", company: "Globex LLC", noticeAddress: "john@globex.com" },
+  "party1.name": "Jane Doe",
+  "party1.title": "CEO",
+  "party1.company": "Acme Inc.",
+  "party1.noticeAddress": "jane@acme.com",
+  "party2.name": "John Roe",
+  "party2.title": "CTO",
+  "party2.company": "Globex LLC",
+  "party2.noticeAddress": "john@globex.com",
 };
 
-describe("fillCoverPage", () => {
+describe("fillNdaCoverPage", () => {
   it("fills every placeholder in the real template", () => {
-    const md = fillCoverPage(template, completeFields);
+    const md = fillNdaCoverPage(template, completeValues);
 
     expect(md).toContain("Exploring a joint venture\\.");
     expect(md).toContain("### Effective Date\nOctober 27\\, 2026");
@@ -43,8 +47,8 @@ describe("fillCoverPage", () => {
   });
 
   it("checks the alternative term options", () => {
-    const md = fillCoverPage(template, {
-      ...completeFields,
+    const md = fillNdaCoverPage(template, {
+      ...completeValues,
       mndaTerm: "untilTerminated",
       confidentialityTerm: "perpetual",
     });
@@ -56,27 +60,28 @@ describe("fillCoverPage", () => {
   });
 
   it("uses the singular for one year", () => {
-    const md = fillCoverPage(template, { ...completeFields, mndaTermYears: 1 });
+    const md = fillNdaCoverPage(template, { ...completeValues, mndaTermYears: "1" });
     expect(md).toContain("Expires 1 year from Effective Date.");
   });
 
-  it("keeps the template's placeholders for empty answers", () => {
-    const md = fillCoverPage(template, { ...defaultFields, purpose: "" });
+  it("keeps the template's placeholders for empty or invalid answers", () => {
+    const md = fillNdaCoverPage(template, { mndaTerm: "expires", mndaTermYears: "1.5" });
 
     expect(md).toContain(
       "[Evaluating whether to enter into a business relationship with the other party.]",
     );
     expect(md).toContain("[Today’s date]");
+    expect(md).toContain("Expires [1 year(s)] from Effective Date.");
     expect(md).toContain("[Fill in state]");
     expect(md).toContain("[Fill in city or county and state");
     expect(md).toContain("| Print Name |  |  |");
   });
 
   it("keeps multi-line answers readable", () => {
-    const md = fillCoverPage(template, {
-      ...completeFields,
+    const md = fillNdaCoverPage(template, {
+      ...completeValues,
       modifications: "Section 5 is deleted.\n\nSection 9 is amended.",
-      party1: { ...completeFields.party1, noticeAddress: "1 Main St\nWilmington" },
+      "party1.noticeAddress": "1 Main St\nWilmington",
     });
 
     expect(md).toContain("Section 5 is deleted\\.\\\nSection 9 is amended\\.");
@@ -84,8 +89,8 @@ describe("fillCoverPage", () => {
   });
 
   it("never mistakes user text for a placeholder", () => {
-    const md = fillCoverPage(template, {
-      ...completeFields,
+    const md = fillNdaCoverPage(template, {
+      ...completeValues,
       governingLaw: "List any modifications to the MNDA",
       jurisdiction: "Fill in state",
     });
@@ -97,7 +102,7 @@ describe("fillCoverPage", () => {
 
   it("fails loudly if the template no longer contains a placeholder", () => {
     expect(() =>
-      fillCoverPage(template.replace("[Fill in state]", "[State]"), completeFields),
+      fillNdaCoverPage(template.replace("[Fill in state]", "[State]"), completeValues),
     ).toThrow(/\[Fill in state\]/);
   });
 });
@@ -107,20 +112,6 @@ describe("escapeMarkdown", () => {
     expect(escapeMarkdown("*a* | [b](c) <d> # 1.")).toBe(
       "\\*a\\* \\| \\[b\\]\\(c\\) \\<d\\> \\# 1\\.",
     );
-  });
-});
-
-describe("formatDate", () => {
-  it("formats ISO dates without time zone drift", () => {
-    expect(formatDate("2026-01-01")).toBe("January 1, 2026");
-  });
-
-  it("returns an empty string for invalid input", () => {
-    expect(formatDate("")).toBe("");
-    expect(formatDate("not a date")).toBe("");
-    expect(formatDate("20261-10-27")).toBe("");
-    expect(formatDate("0050-01-01")).toBe("");
-    expect(formatDate("2026-02-31")).toBe("");
   });
 });
 

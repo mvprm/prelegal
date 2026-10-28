@@ -1,5 +1,5 @@
 import { Document, Link, Page, pdf, StyleSheet, Text, View } from "@react-pdf/renderer";
-import type { Block, Inline, ListItem } from "@/lib/nda/document";
+import type { Block, Inline, ListItem } from "@/lib/documents/document";
 
 // This module pulls in @react-pdf/renderer, so it is imported on demand when the user
 // downloads, keeping it out of the page's initial bundle.
@@ -37,9 +37,9 @@ const styles = StyleSheet.create({
 const COLUMN_WIDTHS = ["30%", "35%", "35%"];
 
 /** Renders each part (e.g. the cover page and the standard terms) starting on a new page. */
-function NdaPdfDocument({ parts }: { parts: Block[][] }) {
+function PdfDocument({ title, parts }: { title: string; parts: Block[][] }) {
   return (
-    <Document title="Mutual Non-Disclosure Agreement" creator="Prelegal" producer="Prelegal">
+    <Document title={title} creator="Prelegal" producer="Prelegal">
       {parts.map((blocks, i) => (
         <Page key={i} size="LETTER" style={styles.page}>
           {blocks.map((block, j) => (
@@ -64,8 +64,8 @@ function PdfBlock({ block }: { block: Block }) {
         <View style={styles.block}>
           {block.items.map((item, i) => (
             // Keep each clause on one page so its number never strands at a page bottom.
-            // The longest Mutual NDA clause is well under a page.
-            <View key={i} style={styles.listItem} wrap={false}>
+            // A whole section (a clause with sub-clauses) can be longer than a page, so it may break.
+            <View key={i} style={styles.listItem} wrap={item.children.some((child) => child.type === "list")}>
               {item.checked !== null ? (
                 <Text style={styles.checkbox}>{item.checked ? "X" : ""}</Text>
               ) : (
@@ -135,6 +135,6 @@ function renderInlines(inlines: Inline[]): React.ReactNode {
   });
 }
 
-export function renderNdaPdf(parts: Block[][]): Promise<Blob> {
-  return pdf(<NdaPdfDocument parts={parts} />).toBlob();
+export function renderDocumentPdf(title: string, parts: Block[][]): Promise<Blob> {
+  return pdf(<PdfDocument title={title} parts={parts} />).toBlob();
 }

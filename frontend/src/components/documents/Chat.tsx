@@ -1,21 +1,23 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { MAX_MESSAGE_LENGTH, type ChatMessage } from "@/lib/nda/chat";
-import type { NdaChatState } from "./useNdaChat";
+import { MAX_MESSAGE_LENGTH, type ChatMessage } from "@/lib/documents/chat";
+import type { DraftChatState } from "./useDraftChat";
 
-interface NdaChatProps {
-  chat: NdaChatState;
+interface ChatProps {
+  chat: DraftChatState;
   /** False until the page has hydrated and knows today's date. */
   ready: boolean;
 }
 
 /** The conversation with the AI assistant, and a box to write the next message. */
-export function NdaChat({ chat, ready }: NdaChatProps) {
+export function Chat({ chat, ready }: ChatProps) {
   const { messages, pending, error, send, retry } = chat;
-  const [draft, setDraft] = useState("");
+  const [text, setText] = useState("");
   const inputId = useId();
   const logRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const wasPending = useRef(false);
 
-  const canSend = ready && !pending && draft.trim() !== "";
+  const canSend = ready && !pending && text.trim() !== "";
 
   // Keep the newest message in view.
   useEffect(() => {
@@ -23,10 +25,17 @@ export function NdaChat({ chat, ready }: NdaChatProps) {
     if (log) log.scrollTop = log.scrollHeight;
   }, [messages, pending, error]);
 
+  // Once the assistant has answered (or failed to), put the cursor back in the message box
+  // so the user can type the next answer straight away, even after clicking Send.
+  useEffect(() => {
+    if (wasPending.current && !pending) inputRef.current?.focus();
+    wasPending.current = pending;
+  }, [pending]);
+
   function submit() {
     if (!canSend) return;
-    send(draft.trim());
-    setDraft("");
+    send(text.trim());
+    setText("");
   }
 
   return (
@@ -68,12 +77,13 @@ export function NdaChat({ chat, ready }: NdaChatProps) {
         </label>
         <textarea
           id={inputId}
+          ref={inputRef}
           rows={2}
           maxLength={MAX_MESSAGE_LENGTH}
           placeholder="Type your answer…"
           className="flex-1 resize-none rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 focus:outline-none"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
             // Enter sends and Shift+Enter starts a new line, unless an IME is composing text.
             if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {

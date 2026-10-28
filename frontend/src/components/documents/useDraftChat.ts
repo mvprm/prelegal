@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { ChatError, GENERIC_ERROR, GREETING, sendChatMessage, type ChatMessage } from "@/lib/nda/chat";
-import type { NdaFields } from "@/lib/nda/fields";
+import { ChatError, GENERIC_ERROR, GREETING, sendChatMessage, type ChatMessage, type Draft } from "@/lib/documents/chat";
 
-export interface NdaChatState {
+export interface DraftChatState {
   messages: ChatMessage[];
   /** True while waiting for the assistant's reply. */
   pending: boolean;
@@ -14,14 +13,10 @@ export interface NdaChatState {
 }
 
 /**
- * The conversation with the AI assistant. Each reply comes with the fields filled in from
- * the user's answers, which are passed to `onFieldsChange`.
+ * The conversation with the AI assistant. Each reply comes with the draft as it now
+ * stands (the chosen document and its values), which is passed to `onDraftChange`.
  */
-export function useNdaChat(
-  fields: NdaFields,
-  today: string,
-  onFieldsChange: (fields: NdaFields) => void,
-): NdaChatState {
+export function useDraftChat(draft: Draft, today: string, onDraftChange: (draft: Draft) => void): DraftChatState {
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,9 +25,9 @@ export function useNdaChat(
     setPending(true);
     setError(null);
     try {
-      const { reply, fields: filled } = await sendChatMessage(history, fields, today);
+      const { reply, documentId, values } = await sendChatMessage(history, draft, today);
       setMessages([...history, { role: "assistant", content: reply }]);
-      onFieldsChange(filled);
+      onDraftChange({ documentId, values });
     } catch (e) {
       if (!(e instanceof ChatError)) console.error(e);
       setError(e instanceof ChatError ? e.message : GENERIC_ERROR);
