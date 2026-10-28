@@ -45,7 +45,8 @@ coverage.xml
 # Jupyter
 .ipynb_checkpoints/
 
-# Local databases
+# Local databases (the backend recreates its database on every start)
+backend/data/
 *.sqlite
 *.sqlite3
 *.db

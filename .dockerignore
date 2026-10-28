@@ -1,0 +1,13 @@
+# Secrets are passed at run time (docker run --env-file .env), never baked into the image.
+.env
+.env.*
+
+.git
+.claude
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+frontend/.next
+frontend/out
+backend/.venv
+backend/data

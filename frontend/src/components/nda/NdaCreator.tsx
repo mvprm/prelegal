@@ -55,32 +55,32 @@ export function NdaCreator({ coverPageTemplate, standardTerms }: NdaCreatorProps
 
       <section aria-labelledby="preview-heading" className="min-w-0 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="preview-heading" className="text-base font-semibold">
+          <h2 id="preview-heading" className="text-base font-semibold text-brand-navy">
             Preview
           </h2>
           <button
             type="button"
             onClick={handleDownload}
             disabled={missing.length > 0 || downloading}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-neutral-400 dark:disabled:bg-neutral-700"
+            className="rounded-md bg-brand-purple px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-purple/90 disabled:cursor-not-allowed disabled:bg-neutral-400"
           >
             {downloading ? "Preparing PDF…" : "Download PDF"}
           </button>
         </div>
 
         {missing.length > 0 && (
-          <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">
+          <p className="rounded-md border-l-4 border-brand-yellow bg-brand-yellow/10 px-3 py-2 text-sm text-brand-navy">
             To download, fill in: {missing.join(", ")}.
           </p>
         )}
         {error && (
-          <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800 dark:bg-red-950 dark:text-red-100">
+          <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
             {error}
           </p>
         )}
 
-        {/* Always light, like the printed page, even in dark mode. */}
-        <article className="rounded-lg border border-neutral-200 bg-white px-6 py-8 text-neutral-900 shadow-sm sm:px-10 sm:py-12 dark:border-neutral-800">
+        {/* Styled like the printed page, so it keeps the PDF's colours rather than the brand palette. */}
+        <article className="rounded-lg border border-neutral-200 bg-white px-6 py-8 text-neutral-900 shadow-sm sm:px-10 sm:py-12">
           <DocumentView blocks={coverPage} />
           <hr className="my-10 border-dashed border-neutral-300" />
           <DocumentView blocks={standardTerms} />

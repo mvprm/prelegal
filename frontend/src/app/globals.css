@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Brand palette, available as utilities such as text-brand-navy and bg-brand-purple. */
+@theme {
+  --color-brand-yellow: #ecad0a;
+  --color-brand-blue: #209dd7;
+  --color-brand-purple: #753991;
+  --color-brand-navy: #032147;
+  --color-brand-gray: #888888;
 }
 
 @theme inline {
@@ -12,11 +16,11 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Light only: the brand palette (navy headings, yellow accent) is designed for a light page. */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  color-scheme: light;
 }
 
 body {

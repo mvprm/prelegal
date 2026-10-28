@@ -18,6 +18,7 @@ Work is tracked in Jira (project **PL**).
 | PL-1 | A simple website that describes the Prelegal company | To do |
 | PL-2 | A dataset of legal agreement templates the system can later fill in for users | ✅ Done |
 | PL-3 | Prototype of a Mutual NDA creator: the user fills in a form, sees the completed NDA and downloads it | ✅ Done |
+| PL-4 | Technical foundation for V1: FastAPI backend, temporary SQLite database, Docker container and start/stop scripts, placeholder sign in / sign up | ✅ Done |
 
 ### Agreement templates (PL-2)
 
@@ -51,7 +52,33 @@ A web app at `/nda` where the user:
    in, updating as they type.
 3. Downloads the completed agreement as a PDF, ready to sign.
 
-Everything runs in the browser. Nothing the user types is sent to a server.
+Filling in the NDA and creating the PDF happen in the browser. Nothing the user types is
+sent to a server.
+
+### V1 foundation (PL-4)
+
+The app now runs as a single Docker container: a FastAPI backend serves the JSON API under
+`/api` and the statically built frontend everywhere else. It uses a temporary SQLite
+database with a `users` table that is recreated empty every time the container starts.
+
+Sign in (`/signin`) and sign up (`/signup`) are placeholders: the pages exist but do not
+create accounts yet, and `POST /api/auth/signin` and `/api/auth/signup` answer
+`501 Not Implemented`. The pages use the Prelegal colour scheme.
+
+## Running Prelegal
+
+Requires [Docker](https://www.docker.com/). From the repository root:
+
+| | Start | Stop |
+| --- | --- | --- |
+| macOS | `scripts/start-mac.sh` | `scripts/stop-mac.sh` |
+| Linux | `scripts/start-linux.sh` | `scripts/stop-linux.sh` |
+| Windows | `scripts\start-windows.ps1` | `scripts\stop-windows.ps1` |
+
+Start builds the image and runs it at **http://localhost:8000** (API docs at
+http://localhost:8000/api/docs). If a `.env` file exists in the repository root, its
+variables are passed to the container. Stop removes the container, and with it the
+database.
 
 ## Repository layout
 
@@ -59,15 +86,18 @@ Everything runs in the browser. Nothing the user types is sent to a server.
 prelegal/
 ├── catalog.json   # Name, description and filename of every template
 ├── templates/     # Common Paper agreement templates (markdown, CC BY 4.0)
-└── frontend/      # Next.js web app (Mutual NDA creator)
+├── frontend/      # Next.js web app, exported as static files
+├── backend/       # FastAPI app: the API and the server for the frontend
+├── scripts/       # Start and stop scripts for macOS, Linux and Windows
+└── Dockerfile     # Builds the frontend, then packages it with the backend
 ```
 
 ## Frontend
 
 The frontend is a [Next.js](https://nextjs.org) 16 app (App Router, TypeScript, Tailwind
 CSS v4) in [`frontend/`](frontend/). It reads the agreement text from `templates/` at build
-time, so `templates/` is the single source of truth, and the pages are prerendered as static
-content. PDFs are generated in the browser with
+time, so `templates/` is the single source of truth. The app is exported as static files
+(`output: "export"`) that the backend serves. PDFs are generated in the browser with
 [`@react-pdf/renderer`](https://react-pdf.org).
 
 ### Getting started
@@ -87,11 +117,28 @@ npm run dev          # http://localhost:3000/nda
 | `npm test` | Run the unit tests (Vitest), including a real PDF render |
 | `npm run lint` | Lint with ESLint |
 | `npx tsc --noEmit` | Type-check |
-| `npm run build` | Create a production build |
-| `npm start` | Serve the production build at http://localhost:3000 |
+| `npm run build` | Export the static site to `frontend/out/` |
 
 See [`frontend/README.md`](frontend/README.md) for how filling, parsing and PDF rendering
 work.
+
+## Backend
+
+The backend is a [FastAPI](https://fastapi.tiangolo.com) app in [`backend/`](backend/),
+managed with [uv](https://docs.astral.sh/uv/). To run it without Docker, build the frontend
+first (`npm run build` in `frontend/`), then:
+
+```bash
+cd backend
+uv run uvicorn --factory app.main:create_app --reload   # http://localhost:8000
+```
+
+| Command | What it does |
+| --- | --- |
+| `uv run pytest` | Run the tests |
+| `uv run uvicorn --factory app.main:create_app` | Serve the API and `../frontend/out` at http://localhost:8000 |
+
+See [`backend/README.md`](backend/README.md) for its structure and settings.
 
 ## License
 

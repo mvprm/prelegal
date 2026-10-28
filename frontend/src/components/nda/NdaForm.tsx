@@ -8,8 +8,7 @@ interface NdaFormProps {
 
 const baseInputClass =
   "rounded-md border border-neutral-300 bg-white text-sm text-neutral-900 " +
-  "focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none " +
-  "dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100";
+  "focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 focus:outline-none";
 const inputClass = `w-full px-3 py-2 shadow-xs ${baseInputClass}`;
 
 export function NdaForm({ fields, onChange }: NdaFormProps) {
@@ -186,7 +185,7 @@ export function NdaForm({ fields, onChange }: NdaFormProps) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <fieldset className="space-y-4">
-      <legend className="mb-4 text-base font-semibold">{title}</legend>
+      <legend className="mb-4 text-base font-semibold text-brand-navy">{title}</legend>
       {children}
     </fieldset>
   );
@@ -207,7 +206,7 @@ function Field({
       <label htmlFor={id} className="block text-sm font-medium">
         {label}
       </label>
-      {hint && <p className="text-xs text-neutral-500 dark:text-neutral-400">{hint}</p>}
+      {hint && <p className="text-xs text-brand-gray">{hint}</p>}
       {children(id)}
     </div>
   );
@@ -231,14 +230,14 @@ function RadioGroup<T extends string>({
   return (
     <fieldset className="space-y-1.5">
       <legend className="text-sm font-medium">{legend}</legend>
-      <p className="text-xs text-neutral-500 dark:text-neutral-400">{hint}</p>
+      <p className="text-xs text-brand-gray">{hint}</p>
       <div className="space-y-2 pt-1">
         {options.map((option) => (
           <label key={option.value} className="flex items-start gap-2 text-sm">
             <input
               type="radio"
               name={name}
-              className="mt-1 accent-blue-600"
+              className="mt-1 accent-brand-blue"
               checked={value === option.value}
               onChange={() => onChange(option.value)}
             />

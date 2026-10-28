@@ -17,11 +17,11 @@ export default function NdaPage() {
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
       <header className="mb-8 space-y-2">
-        <Link href="/" className="text-sm font-medium text-blue-700 hover:underline dark:text-blue-400">
+        <Link href="/" className="text-sm font-medium text-brand-blue hover:underline">
           Prelegal
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Mutual NDA Creator</h1>
-        <p className="max-w-2xl text-neutral-600 dark:text-neutral-400">
+        <h1 className="text-2xl font-bold tracking-tight text-brand-navy sm:text-3xl">Mutual NDA Creator</h1>
+        <p className="max-w-2xl text-brand-gray">
           Fill in the details below to complete a Mutual Non-Disclosure Agreement based on the{" "}
           <a
             href="https://commonpaper.com/standards/mutual-nda/1.0"
