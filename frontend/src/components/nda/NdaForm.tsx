@@ -4,6 +4,8 @@ import type { NdaFields, Party } from "@/lib/nda/fields";
 interface NdaFormProps {
   fields: NdaFields;
   onChange: (fields: NdaFields) => void;
+  /** Makes every input read-only, e.g. while the AI assistant is filling in the fields. */
+  disabled?: boolean;
 }
 
 const baseInputClass =
@@ -11,7 +13,7 @@ const baseInputClass =
   "focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 focus:outline-none";
 const inputClass = `w-full px-3 py-2 shadow-xs ${baseInputClass}`;
 
-export function NdaForm({ fields, onChange }: NdaFormProps) {
+export function NdaForm({ fields, onChange, disabled = false }: NdaFormProps) {
   const set = <K extends keyof NdaFields>(key: K, value: NdaFields[K]) =>
     onChange({ ...fields, [key]: value });
   const setParty = (key: "party1" | "party2", field: keyof Party, value: string) =>
@@ -19,7 +21,7 @@ export function NdaForm({ fields, onChange }: NdaFormProps) {
 
   return (
     <form className="space-y-8" onSubmit={(event) => event.preventDefault()}>
-      <Section title="Agreement">
+      <Section title="Agreement" disabled={disabled}>
         <Field label="Purpose" hint="How Confidential Information may be used">
           {(id) => (
             <textarea
@@ -129,7 +131,7 @@ export function NdaForm({ fields, onChange }: NdaFormProps) {
       </Section>
 
       {(["party1", "party2"] as const).map((key, index) => (
-        <Section key={key} title={`Party ${index + 1}`}>
+        <Section key={key} title={`Party ${index + 1}`} disabled={disabled}>
           <Field label="Company">
             {(id) => (
               <input
@@ -182,9 +184,17 @@ export function NdaForm({ fields, onChange }: NdaFormProps) {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  disabled,
+  children,
+}: {
+  title: string;
+  disabled: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <fieldset className="space-y-4">
+    <fieldset disabled={disabled} className="space-y-4 disabled:opacity-60">
       <legend className="mb-4 text-base font-semibold text-brand-navy">{title}</legend>
       {children}
     </fieldset>

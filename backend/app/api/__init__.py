@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 
-from . import auth, health
+from . import auth, health, nda
 
 
 def create_api() -> FastAPI:
@@ -15,4 +15,5 @@ def create_api() -> FastAPI:
     api = FastAPI(title="Prelegal API", docs_url="/docs", openapi_url="/openapi.json", redoc_url=None)
     api.include_router(health.router)
     api.include_router(auth.router, prefix="/auth", tags=["auth"])
+    api.include_router(nda.router, prefix="/nda", tags=["nda"])
     return api

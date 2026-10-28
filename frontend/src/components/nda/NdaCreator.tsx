@@ -5,7 +5,9 @@ import { parseDocument, type Block } from "@/lib/nda/document";
 import { defaultFields, missingFields, pdfFileName, type NdaFields } from "@/lib/nda/fields";
 import { fillCoverPage } from "@/lib/nda/fill";
 import { DocumentView } from "./DocumentView";
+import { NdaChat } from "./NdaChat";
 import { NdaForm } from "./NdaForm";
+import { useNdaChat } from "./useNdaChat";
 
 interface NdaCreatorProps {
   /** Raw markdown of the cover page template, filled in as the user types. */
@@ -32,6 +34,9 @@ export function NdaCreator({ coverPageTemplate, standardTerms }: NdaCreatorProps
     setFields(next);
   }
 
+  const [tab, setTab] = useState<Tab>("chat");
+  const chat = useNdaChat(current, today, handleChange);
+
   async function handleDownload() {
     setDownloading(true);
     setError(null);
@@ -49,8 +54,16 @@ export function NdaCreator({ coverPageTemplate, standardTerms }: NdaCreatorProps
 
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-10">
-      <section aria-label="NDA details">
-        <NdaForm fields={current} onChange={handleChange} />
+      <section aria-label="NDA details" className="min-w-0">
+        <Tabs selected={tab} onSelect={setTab} />
+        {/* Both panels stay mounted, so switching tabs keeps the conversation and its scroll position. */}
+        <div id={panelId("chat")} role="tabpanel" aria-labelledby={tabId("chat")} hidden={tab !== "chat"}>
+          <NdaChat chat={chat} ready={today !== ""} />
+        </div>
+        <div id={panelId("form")} role="tabpanel" aria-labelledby={tabId("form")} hidden={tab !== "form"}>
+          {/* Locked while the assistant replies, since its reply replaces the fields it was sent. */}
+          <NdaForm fields={current} onChange={handleChange} disabled={chat.pending} />
+        </div>
       </section>
 
       <section aria-labelledby="preview-heading" className="min-w-0 space-y-4">
@@ -86,6 +99,44 @@ export function NdaCreator({ coverPageTemplate, standardTerms }: NdaCreatorProps
           <DocumentView blocks={standardTerms} />
         </article>
       </section>
+    </div>
+  );
+}
+
+type Tab = "chat" | "form";
+
+const tabs: { value: Tab; label: string }[] = [
+  { value: "chat", label: "Chat with AI" },
+  { value: "form", label: "Edit fields" },
+];
+
+const tabId = (tab: Tab) => `nda-tab-${tab}`;
+const panelId = (tab: Tab) => `nda-panel-${tab}`;
+
+function Tabs({ selected, onSelect }: { selected: Tab; onSelect: (tab: Tab) => void }) {
+  return (
+    <div role="tablist" aria-label="How to fill in the NDA" className="mb-4 flex gap-1 border-b border-neutral-200">
+      {tabs.map(({ value, label }) => {
+        const isSelected = value === selected;
+        return (
+          <button
+            key={value}
+            id={tabId(value)}
+            type="button"
+            role="tab"
+            aria-selected={isSelected}
+            aria-controls={panelId(value)}
+            onClick={() => onSelect(value)}
+            className={`-mb-px border-b-2 px-3 py-2 text-sm font-semibold ${
+              isSelected
+                ? "border-brand-blue text-brand-navy"
+                : "border-transparent text-brand-gray hover:text-brand-navy"
+            }`}
+          >
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }
