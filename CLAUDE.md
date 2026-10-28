@@ -68,7 +68,7 @@ Jira project **PL**. Branches are `feature/PL-N-slug`, merged into `main` with `
 
 ### PL-3: Mutual NDA creator prototype (done)
 - Next.js 16 app in `frontend/`. Form at `/nda` with a live preview and PDF download (`@react-pdf/renderer`).
-- Filling, parsing and PDF generation run in the browser (`src/lib/nda/`, `src/components/nda/`). No AI chat yet.
+- Filling, parsing and PDF generation run in the browser (`src/lib/nda/`, `src/components/nda/`).
 - Templates are read from `../templates` at build time, so builds need the full repo.
 - Tests: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run build` in `frontend/`.
 
@@ -78,4 +78,10 @@ Jira project **PL**. Branches are `feature/PL-N-slug`, merged into `main` with `
 - **Auth (placeholder)**: `/signin` and `/signup` pages show "coming soon" and never call the API. `POST /api/auth/signup|signin` validate the body, then return 501. No sessions or password hashing yet.
 - **Frontend**: switched to a static export (`output: "export"`, `trailingSlash: true`), so no route handlers, server actions, rewrites or `cacheComponents`. Restyled with the brand palette; dark mode removed.
 - **Docker + scripts**: multi-stage `Dockerfile` (Node build, then Python runtime as non-root with a health check on `/api/health`). DB at `/data/prelegal.db` in the container. Start/stop scripts in `scripts/`.
-- **LLM**: not wired up yet. `.env` (with `OPENROUTER_API_KEY`) is passed to the container via `--env-file`.
+- **LLM**: `.env` (with `OPENROUTER_API_KEY`) is passed to the container via `--env-file`.
+
+### PL-5: AI chat for the Mutual NDA (done)
+- `/nda` has two tabs: "Chat with AI" (default) and "Edit fields" (the PL-3 form), both filling the same fields and live preview. The form is disabled while the AI replies.
+- `POST /api/nda/chat` (`app/api/nda.py`) is stateless: the browser sends the latest 40 messages, the fields and `today`, and gets `{reply, fields}`. The LLM returns Structured Outputs `{reply, updates}` (`app/nda.py`), where null means unchanged; the backend merges the updates and drops invalid ones, so it never returns fields it would reject.
+- `app/llm.py` `structured_completion()` wraps LiteLLM (Cerebras skill) and is stubbed in tests; `tests/test_nda_live.py` calls the real model and is skipped without a key. Run the backend locally with `uv run --env-file ../.env ...`.
+- Frontend: `src/lib/nda/chat.ts` (API client, greeting), `src/components/nda/useNdaChat.ts` and `NdaChat.tsx`. Chat history lives only in the page; refreshing starts over.

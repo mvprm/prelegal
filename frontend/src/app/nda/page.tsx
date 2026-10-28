@@ -6,7 +6,7 @@ import { readTemplate } from "@/lib/templates";
 
 export const metadata: Metadata = {
   title: "Mutual NDA Creator",
-  description: "Fill in a Common Paper Mutual NDA and download it as a PDF.",
+  description: "Draft a Common Paper Mutual NDA by chatting with an AI assistant, and download it as a PDF.",
 };
 
 export default function NdaPage() {
@@ -22,7 +22,7 @@ export default function NdaPage() {
         </Link>
         <h1 className="text-2xl font-bold tracking-tight text-brand-navy sm:text-3xl">Mutual NDA Creator</h1>
         <p className="max-w-2xl text-brand-gray">
-          Fill in the details below to complete a Mutual Non-Disclosure Agreement based on the{" "}
+          Chat with our AI assistant to complete a Mutual Non-Disclosure Agreement based on the{" "}
           <a
             href="https://commonpaper.com/standards/mutual-nda/1.0"
             target="_blank"
@@ -31,7 +31,8 @@ export default function NdaPage() {
           >
             Common Paper Mutual NDA
           </a>
-          . The preview updates as you type. Download it as a PDF when you are done.
+          , or edit the fields yourself. The preview updates as you go. Download it as a PDF when
+          you are done.
         </p>
       </header>
       <NdaCreator coverPageTemplate={coverPageTemplate} standardTerms={standardTerms} />
