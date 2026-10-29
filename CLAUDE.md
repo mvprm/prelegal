@@ -73,9 +73,9 @@ Jira project **PL**. Branches are `feature/PL-N-slug`, merged into `main` with `
 - Tests: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run build` in `frontend/`.
 
 ### PL-4: V1 foundation (done)
-- **Backend** (`backend/`, uv, Python 3.13): `app/main.py` `create_app()` resets the DB on startup, mounts the API sub-app at `/api` (docs at `/api/docs`) and the static frontend at `/`. Add endpoints as routers in `app/api/`. Settings: `PRELEGAL_DB_PATH`, `PRELEGAL_STATIC_DIR`, `PRELEGAL_DOCUMENTS_PATH`. Tests: `uv run pytest` (real temp SQLite; only the LLM is stubbed).
-- **Database**: SQLite `users` table. Schema in `app/schema.sql`; no migrations, since the DB is recreated every start.
-- **Auth (placeholder)**: `/signin` and `/signup` pages show "coming soon" and never call the API. `POST /api/auth/signup|signin` validate the body, then return 501. No sessions or password hashing yet.
+- **Backend** (`backend/`, uv, Python 3.13): `app/main.py` `create_app()` resets the DB on startup, mounts the API sub-app at `/api` (docs at `/api/docs`) and the static frontend at `/`. Add endpoints as routers in `app/api/`. Settings: `PRELEGAL_DB_PATH`, `PRELEGAL_STATIC_DIR`, `PRELEGAL_DOCUMENTS_PATH`, `PRELEGAL_SECURE_COOKIES`. Tests: `uv run pytest` (real temp SQLite; only the LLM is stubbed).
+- **Database**: SQLite, schema in `app/schema.sql` (`users`, `sessions`, `documents` since PL-7); no migrations, since the DB is recreated every start.
+- **Auth**: placeholder in PL-4, real since PL-7 (below).
 - **Frontend**: switched to a static export (`output: "export"`, `trailingSlash: true`), so no route handlers, server actions, rewrites or `cacheComponents`. Restyled with the brand palette; dark mode removed.
 - **Docker + scripts**: multi-stage `Dockerfile` (Node build, then Python runtime as non-root with a health check on `/api/health`). DB at `/data/prelegal.db` in the container. Start/stop scripts in `scripts/`.
 - **LLM**: `.env` (with `OPENROUTER_API_KEY`) is passed to the container via `--env-file`.
@@ -91,3 +91,10 @@ Jira project **PL**. Branches are `feature/PL-N-slug`, merged into `main` with `
 - `app/chat.py` `Assistant`: a selection schema until a document is chosen, then a per-document schema built from its fields (`updates`, `switchTo`). Replies are `reply` + required `question`; a question without "?" gets a fallback question about the next missing field. On the turn a document is chosen, a trailing system message makes the model capture details from the whole conversation.
 - Cover pages: the NDA fills its official template (`ndaCoverPage.ts`); the others are generated from the fields (`coverPage.ts`). Section titles (`header_N` spans) render bold. A frontend test checks that every `*_link` term in each template has a field.
 - The chat's focus returns to the message box after every reply.
+
+### PL-7: Accounts, saved documents, polish (done)
+- Every page but `/signin` and `/signup` needs an account. Backend: `app/accounts.py` (scrypt password hashes; sessions = random token in an HttpOnly SameSite=Lax `prelegal_session` cookie, SHA-256 stored, 7 days), `app/api/auth.py` (`signup`, `signin`, `signout`, `me`), `app/api/deps.py` (`Db` per-request connection, `CurrentUser`). `/api/chat` and `/api/documents` need a session (401 otherwise); `/api/health` stays public. Tests: `user_client` / `other_client` fixtures in `tests/conftest.py`.
+- Saved documents: `app/api/documents.py`, `GET/PUT/DELETE /api/documents/{id}` and `GET /api/documents`. Ids are UUIDs made by the browser, so `PUT` is an idempotent create-or-update; another user's id answers 404. Drafts may be incomplete (only the document and field names are checked).
+- Frontend: `AuthProvider` (in the root layout) + `AuthGate` (client-side redirects, `src/lib/auth/redirect.ts`, `?next=` back after sign in); `src/lib/api.ts` `apiRequest`/`ApiError` for every API call (any 401 signs the user out of the UI). `/` is My documents (`MyDocuments.tsx`: open, download PDF, delete). `/draft/?id=…` (`DraftWorkspace.tsx`): a new draft gets an id first; it is saved automatically once a document is chosen (`lib/documents/autosave.ts` + `useAutosave.ts`). Reopening starts a fresh chat, values only.
+- Polish: shared `AppShell` header/footer and `components/ui.tsx` (buttons, inputs, logo, loading); split-screen sign in / sign up. Disclaimer (`src/lib/legal.ts`) on the draft preview, in every PDF page footer and in the app footer.
+- Known: in the static export, Next's client-side navigation asks for `…/__next.<route>.__PAGE__.txt` files that are exported as `__next.<route>/__PAGE__.txt`, so those requests 404 and navigation falls back to full page loads.

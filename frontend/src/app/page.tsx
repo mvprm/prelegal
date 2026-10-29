@@ -1,27 +1,23 @@
-import Link from "next/link";
+import type { Metadata } from "next";
+import { AppShell } from "@/components/AppShell";
+import { AuthGate } from "@/components/auth/AuthGate";
+import { MyDocuments } from "@/components/documents/MyDocuments";
+import { readDraftingData } from "@/lib/templates";
 
+export const metadata: Metadata = {
+  title: "My Documents",
+};
+
+/** Home: the signed-in user's documents. Signed-out visitors are sent to sign in. */
 export default function Home() {
+  // The templates are needed to make PDFs straight from the list.
+  const { catalog, templates } = readDraftingData();
+
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-6 px-4 py-16">
-      <h1 className="text-3xl font-bold tracking-tight text-brand-navy">Prelegal</h1>
-      <p className="text-lg text-brand-gray">
-        A platform for drafting common legal agreements.
-      </p>
-      <Link
-        href="/draft"
-        className="self-start rounded-md bg-brand-blue px-4 py-2 font-semibold text-white shadow-sm hover:bg-brand-blue/90"
-      >
-        Draft an agreement
-      </Link>
-      <p className="text-sm text-brand-gray">
-        <Link href="/signin" className="font-medium text-brand-blue hover:underline">
-          Sign in
-        </Link>{" "}
-        or{" "}
-        <Link href="/signup" className="font-medium text-brand-blue hover:underline">
-          create an account
-        </Link>
-      </p>
-    </main>
+    <AuthGate access="user">
+      <AppShell>
+        <MyDocuments catalog={catalog} templates={templates} />
+      </AppShell>
+    </AuthGate>
   );
 }

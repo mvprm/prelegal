@@ -1,30 +1,41 @@
 "use client";
 
 import { useMemo, useState, useSyncExternalStore } from "react";
-import { findDocument, missingFields, pdfFileName, type DocumentSpec } from "@/lib/documents/catalog";
-import type { Draft } from "@/lib/documents/chat";
+import { findDocument, missingFields, type DocumentSpec } from "@/lib/documents/catalog";
+import { GREETING, type ChatMessage, type Draft } from "@/lib/documents/chat";
 import { buildCoverPage } from "@/lib/documents/coverPage";
 import { parseDocument } from "@/lib/documents/document";
+import { DRAFT_DISCLAIMER } from "@/lib/legal";
+import { primaryButton } from "../ui";
 import { Chat } from "./Chat";
 import { DocumentForm } from "./DocumentForm";
 import { DocumentView } from "./DocumentView";
+import { downloadDocumentPdf } from "./download";
+import { useAutosave, type AutosaveState } from "./useAutosave";
 import { useDraftChat } from "./useDraftChat";
 
 interface DraftCreatorProps {
   catalog: DocumentSpec[];
   /** Raw markdown of every template the catalog refers to, by filename. */
   templates: Record<string, string>;
+  /** The id the draft is saved under in the user's account. */
+  id: string;
+  /** The draft as saved, when reopening a document; otherwise an empty draft. */
+  initialDraft: Draft;
 }
 
 /**
  * Drafting a document: the chat (or the form) on one side, the live preview on the other.
  * The assistant picks the document from the conversation; until then there is no preview.
+ * From then on every change is saved to the user's account.
  */
-export function DraftCreator({ catalog, templates }: DraftCreatorProps) {
+export function DraftCreator({ catalog, templates, id, initialDraft }: DraftCreatorProps) {
   const today = useToday();
-  const [draft, setDraft] = useState<Draft>({ documentId: null, values: {} });
+  const [draft, setDraft] = useState<Draft>(initialDraft);
   const spec = findDocument(catalog, draft.documentId);
-  const chat = useDraftChat(draft, today, setDraft);
+  const [greeting] = useState(() => greetingFor(findDocument(catalog, initialDraft.documentId)));
+  const chat = useDraftChat(draft, today, setDraft, greeting);
+  const autosave = useAutosave(id, draft, initialDraft);
   const [tab, setTab] = useState<Tab>("chat");
 
   return (
@@ -48,19 +59,34 @@ export function DraftCreator({ catalog, templates }: DraftCreatorProps) {
         </div>
       </section>
 
-      {spec ? <Preview spec={spec} draft={draft} templates={templates} /> : <Placeholder catalog={catalog} />}
+      {spec ? (
+        <Preview spec={spec} draft={draft} templates={templates} autosave={autosave} />
+      ) : (
+        <Placeholder catalog={catalog} />
+      )}
     </div>
   );
+}
+
+/** The assistant's first message: an opening question, or for a saved document, where it stands. */
+function greetingFor(spec: DocumentSpec | null): ChatMessage {
+  if (!spec) return GREETING;
+  return {
+    role: "assistant",
+    content: `Welcome back! We're working on your ${spec.name}. What would you like to fill in or change?`,
+  };
 }
 
 function Preview({
   spec,
   draft,
   templates,
+  autosave,
 }: {
   spec: DocumentSpec;
   draft: Draft;
   templates: Record<string, string>;
+  autosave: AutosaveState;
 }) {
   const coverPage = parseDocument(
     buildCoverPage(spec, draft.values, spec.coverPageTemplate && templates[spec.coverPageTemplate]),
@@ -76,9 +102,7 @@ function Preview({
     setDownloading(true);
     setError(null);
     try {
-      const { renderDocumentPdf } = await import("./DocumentPdf");
-      const blob = await renderDocumentPdf(spec.name, [coverPage, standardTerms]);
-      saveFile(blob, pdfFileName(spec, draft.values));
+      await downloadDocumentPdf(spec, draft.values, templates);
     } catch (e) {
       console.error(e);
       setError("Sorry, the PDF could not be created. Please try again.");
@@ -90,18 +114,20 @@ function Preview({
   return (
     <section aria-labelledby="preview-heading" className="min-w-0 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="preview-heading" className="text-base font-semibold text-brand-navy">
-          {spec.name}
-        </h2>
-        <button
-          type="button"
-          onClick={handleDownload}
-          disabled={missing.length > 0 || downloading}
-          className="rounded-md bg-brand-purple px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-purple/90 disabled:cursor-not-allowed disabled:bg-neutral-400"
-        >
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h2 id="preview-heading" className="text-base font-semibold text-brand-navy">
+            {spec.name}
+          </h2>
+          <SaveIndicator autosave={autosave} />
+        </div>
+        <button type="button" onClick={handleDownload} disabled={missing.length > 0 || downloading} className={primaryButton}>
           {downloading ? "Preparing PDF…" : "Download PDF"}
         </button>
       </div>
+
+      <p className="rounded-md border border-brand-blue/30 bg-brand-blue/5 px-3 py-2 text-sm text-brand-navy">
+        <strong className="font-semibold">Draft for legal review.</strong> {DRAFT_DISCLAIMER}
+      </p>
 
       {missing.length > 0 && (
         <p className="rounded-md border-l-4 border-brand-yellow bg-brand-yellow/10 px-3 py-2 text-sm text-brand-navy">
@@ -212,13 +238,22 @@ function localIsoDate(): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
-function saveFile(blob: Blob, fileName: string) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
+/** Whether the latest changes are saved to the user's account. */
+function SaveIndicator({ autosave: { status, retry } }: { autosave: AutosaveState }) {
+  if (status === null) return null;
+  if (status === "error") {
+    return (
+      <span role="alert" className="text-xs text-red-700">
+        Not saved.{" "}
+        <button type="button" onClick={retry} className="font-semibold underline hover:no-underline">
+          Try again
+        </button>
+      </span>
+    );
+  }
+  return (
+    <span role="status" className="text-xs text-brand-gray">
+      {status === "saving" ? "Saving…" : "Saved to My documents"}
+    </span>
+  );
 }

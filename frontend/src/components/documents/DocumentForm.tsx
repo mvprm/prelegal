@@ -1,6 +1,7 @@
 import { useId } from "react";
 import { isActive, partyFields, type DocumentSpec, type FieldSpec, type Values } from "@/lib/documents/catalog";
 import { MAX_VALUE_LENGTH } from "@/lib/documents/chat";
+import { inputClass } from "../ui";
 
 interface DocumentFormProps {
   spec: DocumentSpec;
@@ -9,10 +10,6 @@ interface DocumentFormProps {
   /** Makes every input read-only, e.g. while the AI assistant is filling in the fields. */
   disabled?: boolean;
 }
-
-const inputClass =
-  "w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 shadow-xs " +
-  "focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 focus:outline-none";
 
 /** Every field of the document, generated from its spec in documents.json. */
 export function DocumentForm({ spec, values, onChange, disabled = false }: DocumentFormProps) {
