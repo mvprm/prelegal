@@ -11,3 +11,7 @@ frontend/.next
 frontend/out
 backend/.venv
 backend/data
+
+# Not part of the image.
+.github
+docs
