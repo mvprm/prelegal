@@ -43,11 +43,14 @@ as described in `../backend/README.md`) or with Docker.
   scripts never see.
 - **API requests** go through `apiRequest` (`src/lib/api.ts`), which turns failures into an
   `ApiError` with a message to show. Its `fetchImpl` parameter lets the tests fake the backend.
+- **Choosing the document**: from the list next to the chat, or by telling the assistant. A
+  card sets the document and tells the assistant, which carries on with the first questions.
 - **Saving**: a new draft gets a random id in its address (`/draft/?id=…`) and is saved under
-  it with `PUT /api/documents/{id}` once the assistant has chosen the document, then after
+  it with `PUT /api/documents/{id}` once the document is chosen, then after
   every change, a moment after the changes pause (`src/lib/documents/autosave.ts`, with one
-  save at a time and the latest change always sent last). Reopening a document starts a new
-  conversation; the assistant sees the saved values.
+  save at a time and the latest change always sent last). Opening `/draft/?id=…` always loads
+  the document from the account (nothing saved yet means a new draft). Reopening a document
+  starts a new conversation; the assistant sees the saved values.
 - **Templates and the catalog** are read from the repository's `templates/` directory and
   `documents.json` at build time (`src/lib/templates.ts`) and baked into the pages that need
   them (`/` and `/draft`), so they are the single source of truth. Builds must run with the whole repository checked out,

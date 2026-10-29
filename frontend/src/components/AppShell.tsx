@@ -31,7 +31,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
             <Link href="/draft/" className={`${primaryButton} whitespace-nowrap`}>
-              New<span className="hidden sm:inline"> document</span>
+              <span className="sm:hidden">New</span>
+              <span className="hidden sm:inline">New document</span>
             </Link>
             <span className="hidden max-w-48 truncate text-sm text-brand-gray md:inline" title={user?.email}>
               {user?.email}

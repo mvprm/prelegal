@@ -22,6 +22,7 @@ Work is tracked in Jira (project **PL**).
 | PL-5 | AI chat for the Mutual NDA: a freeform chat fills in the NDA instead of a form | ✅ Done |
 | PL-6 | All 11 agreement types via AI chat, with help choosing the right one | ✅ Done |
 | PL-7 | Accounts (sign up, sign in) with saved documents, a professional look, and a draft disclaimer | ✅ Done |
+| PL-8 | Bug fixes: choose the document from a list as well as the chat; reopening a saved document shows it | ✅ Done |
 
 ### Agreement templates (PL-2)
 
@@ -52,8 +53,9 @@ Signed-in users land on **My documents**, which lists the agreements they have d
 open and keep editing, download as a PDF, or delete. **New document** opens `/draft`, where
 the user:
 
-1. Tells an AI assistant what they need. It picks the right agreement, or, for a document
-   Prelegal cannot draft, says so and offers the closest one it can.
+1. Picks an agreement from the list, or tells an AI assistant what they need. The assistant
+   picks the right agreement, or, for a document Prelegal cannot draft, says so and offers the
+   closest one it can.
 2. Answers the assistant's questions about the parties and the terms, or fills in the fields
    in a form instead. The agreement (cover page and Standard Terms) updates as they go.
 3. Downloads the completed agreement as a PDF, ready for legal review and signature.

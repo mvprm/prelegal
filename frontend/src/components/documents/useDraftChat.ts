@@ -8,7 +8,8 @@ export interface DraftChatState {
   pending: boolean;
   /** Why the last message got no reply, if it failed. */
   error: string | null;
-  send: (text: string) => void;
+  /** Sends the user's message, with `draft` (default: the current one) as the draft it applies to. */
+  send: (text: string, draft?: Draft) => void;
   /** Asks again for a reply to the last message, after an error. */
   retry: () => void;
 }
@@ -28,11 +29,11 @@ export function useDraftChat(
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function requestReply(history: ChatMessage[]) {
+  async function requestReply(history: ChatMessage[], sentDraft: Draft) {
     setPending(true);
     setError(null);
     try {
-      const { reply, documentId, values } = await sendChatMessage(history, draft, today);
+      const { reply, documentId, values } = await sendChatMessage(history, sentDraft, today);
       setMessages([...history, { role: "assistant", content: reply }]);
       onDraftChange({ documentId, values });
     } catch (e) {
@@ -43,11 +44,11 @@ export function useDraftChat(
     }
   }
 
-  function send(text: string) {
+  function send(text: string, sentDraft: Draft = draft) {
     const history: ChatMessage[] = [...messages, { role: "user", content: text }];
     setMessages(history);
-    void requestReply(history);
+    void requestReply(history, sentDraft);
   }
 
-  return { messages, pending, error, send, retry: () => void requestReply(messages) };
+  return { messages, pending, error, send, retry: () => void requestReply(messages, draft) };
 }

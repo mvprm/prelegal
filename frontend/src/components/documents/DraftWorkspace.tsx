@@ -17,38 +17,32 @@ interface DraftWorkspaceProps {
 
 /**
  * The draft at `/draft/?id=…`. A new draft first gets an id in the address, so it is saved
- * under that id and the page can be reloaded or bookmarked; an id with nothing saved yet
- * opens as a new draft.
+ * under that id and the page can be reloaded or bookmarked. The document is always loaded
+ * from the account, and an id with nothing saved yet opens as a new draft.
  */
 export function DraftWorkspace({ catalog, templates }: DraftWorkspaceProps) {
   const id = useSearchParams().get("id");
   const router = useRouter();
 
   useEffect(() => {
-    if (id) return;
-    const newId = newDocumentId();
-    startedHere.add(newId);
-    router.replace(`/draft/?id=${newId}`);
+    if (!id) router.replace(`/draft/?id=${newDocumentId()}`);
   }, [id, router]);
 
   // Keyed by id, so "New document" (which drops the id) starts over with a fresh chat.
   return id ? <SavedDraft key={id} id={id} catalog={catalog} templates={templates} /> : <PageLoading />;
 }
 
-/** Ids of the drafts started in this page load, which have nothing saved to fetch yet. */
-const startedHere = new Set<string>();
-
 const NEW_DRAFT: Draft = { documentId: null, values: {} };
 
 type Loaded = { status: "loading" } | { status: "ready"; draft: Draft } | { status: "failed"; message: string };
 
 function SavedDraft({ id, catalog, templates }: DraftWorkspaceProps & { id: string }) {
-  const isNew = startedHere.has(id);
-  const [loaded, setLoaded] = useState<Loaded>(isNew ? { status: "ready", draft: NEW_DRAFT } : { status: "loading" });
+  const [loaded, setLoaded] = useState<Loaded>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
 
+  // Loaded every time, even for a draft started moments ago in this tab: by now it may have
+  // been saved, and showing it as empty would lose (and could overwrite) what was saved.
   useEffect(() => {
-    if (isNew) return;
     let current = true;
     getDocument(id).then(
       ({ documentId, values }) => current && setLoaded({ status: "ready", draft: { documentId, values } }),
@@ -64,7 +58,7 @@ function SavedDraft({ id, catalog, templates }: DraftWorkspaceProps & { id: stri
     return () => {
       current = false;
     };
-  }, [id, attempt, isNew]);
+  }, [id, attempt]);
 
   switch (loaded.status) {
     case "loading":
