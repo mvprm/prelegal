@@ -1,3 +1,4 @@
+import { apiRequest } from "../api";
 import type { Values } from "./catalog";
 
 export interface ChatMessage {
@@ -39,40 +40,20 @@ export interface ChatReply extends Draft {
   reply: string;
 }
 
-/** A failed chat request, with a message that can be shown to the user. */
-export class ChatError extends Error {}
-
-export const GENERIC_ERROR = "Sorry, something went wrong. Please try again.";
-
 /**
  * Sends the conversation, ending with the user's new message, to the AI assistant. Returns
  * its reply and the draft as it now stands: the document may have been chosen or changed,
- * and the values have the user's answers filled in.
+ * and the values have the user's answers filled in. Fails with an `ApiError`.
  */
-export async function sendChatMessage(
+export function sendChatMessage(
   messages: ChatMessage[],
   draft: Draft,
   today: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ChatReply> {
-  let response: Response;
-  try {
-    response = await fetchImpl("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: messages.slice(-MAX_HISTORY), ...draft, today }),
-    });
-  } catch {
-    throw new ChatError("Could not reach Prelegal. Check your connection and try again.");
-  }
-
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    // The backend's own errors carry a readable message; validation errors carry a list.
-    throw new ChatError(typeof body?.detail === "string" ? body.detail : GENERIC_ERROR);
-  }
-
-  return response.json().catch(() => {
-    throw new ChatError(GENERIC_ERROR);
+  return apiRequest<ChatReply>("/chat", {
+    method: "POST",
+    body: { messages: messages.slice(-MAX_HISTORY), ...draft, today },
+    fetchImpl,
   });
 }

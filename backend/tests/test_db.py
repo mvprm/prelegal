@@ -21,12 +21,31 @@ def table_names(path: Path) -> set[str]:
     return {row["name"] for row in rows}
 
 
-def test_creates_the_users_table(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    ("table", "columns"),
+    [
+        ("users", ["id", "email", "password_hash", "created_at"]),
+        ("sessions", ["token_hash", "user_id", "expires_at"]),
+        ("documents", ["id", "user_id", "document_id", "values_json", "created_at", "updated_at"]),
+    ],
+)
+def test_creates_the_tables(tmp_path: Path, table: str, columns: list[str]) -> None:
     db = tmp_path / "nested" / "prelegal.db"
     reset_database(db)
     with closing(connect(db)) as conn:
-        columns = [row["name"] for row in conn.execute("PRAGMA table_info(users)")]
-    assert columns == ["id", "email", "password_hash", "created_at"]
+        assert [row["name"] for row in conn.execute(f"PRAGMA table_info({table})")] == columns
+
+
+def test_deleting_a_user_deletes_their_sessions_and_documents(tmp_path: Path) -> None:
+    db = tmp_path / "prelegal.db"
+    reset_database(db)
+    add_user(db, "ada@example.com")
+    with closing(connect(db)) as conn, conn:
+        conn.execute("INSERT INTO sessions VALUES ('hash', 1, '2099-01-01T00:00:00.000Z')")
+        conn.execute("INSERT INTO documents (id, user_id, document_id, values_json) VALUES ('d', 1, 'mutual-nda', '{}')")
+        conn.execute("DELETE FROM users")
+        assert conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0] == 0
+        assert conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0] == 0
 
 
 def test_users_get_an_id_and_creation_time(tmp_path: Path) -> None:
@@ -57,7 +76,7 @@ def test_reset_discards_previous_data_and_tables(tmp_path: Path) -> None:
 
     reset_database(db)
 
-    assert table_names(db) == {"users", "sqlite_sequence"}
+    assert table_names(db) == {"users", "sessions", "documents", "sqlite_sequence"}
     with closing(connect(db)) as conn:
         assert conn.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0
 

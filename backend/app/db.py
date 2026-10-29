@@ -8,8 +8,13 @@ SCHEMA_PATH = Path(__file__).with_name("schema.sql")
 
 
 def connect(path: Path) -> sqlite3.Connection:
-    """Opens the database with rows readable by column name and foreign keys enforced."""
-    conn = sqlite3.connect(path)
+    """Opens the database with rows readable by column name and foreign keys enforced.
+
+    The connection may be used from another thread than the one that opened it: FastAPI
+    opens a request's connection in one worker thread and may run the endpoint in another.
+    It is still never used by two threads at once, since each request opens its own.
+    """
+    conn = sqlite3.connect(path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn

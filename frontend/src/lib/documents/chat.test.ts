@@ -1,15 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { ChatError, GENERIC_ERROR, GREETING, MAX_HISTORY, sendChatMessage, type ChatMessage, type Draft } from "./chat";
+import { ApiError, GENERIC_ERROR } from "../api";
+import { jsonResponse } from "../testing";
+import { GREETING, MAX_HISTORY, sendChatMessage, type ChatMessage, type Draft } from "./chat";
 
 const messages: ChatMessage[] = [GREETING, { role: "user", content: "An NDA with Globex LLC" }];
 const noDraft: Draft = { documentId: null, values: {} };
-
-function jsonResponse(status: number, body: unknown): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
 
 describe("sendChatMessage", () => {
   it("posts the conversation, draft and date, and returns the reply and new draft", async () => {
@@ -47,7 +42,7 @@ describe("sendChatMessage", () => {
       jsonResponse(502, { detail: "The AI assistant could not answer. Please try again." }),
     );
     await expect(sendChatMessage(messages, noDraft, "2026-10-28", fetchImpl)).rejects.toEqual(
-      new ChatError("The AI assistant could not answer. Please try again."),
+      new ApiError(502, "The AI assistant could not answer. Please try again."),
     );
   });
 
@@ -57,8 +52,8 @@ describe("sendChatMessage", () => {
       new Response("Bad Gateway", { status: 502 }),
       new Response("<html>Proxy page</html>", { status: 200 }),
     ]) {
-      await expect(sendChatMessage(messages, noDraft, "2026-10-28", async () => response)).rejects.toEqual(
-        new ChatError(GENERIC_ERROR),
+      await expect(sendChatMessage(messages, noDraft, "2026-10-28", async () => response)).rejects.toThrow(
+        GENERIC_ERROR,
       );
     }
   });

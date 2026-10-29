@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
+_TRUE = {"1", "true", "yes", "on"}
 
 
 @dataclass(frozen=True)
@@ -23,13 +24,18 @@ class Settings:
     documents_path: Path = BACKEND_DIR.parent / "documents.json"
     """The supported documents and their fields, shared with the frontend."""
 
+    secure_cookies: bool = False
+    """Marks the session cookie Secure, so browsers send it over HTTPS only. Turn it on when
+    the app is served over HTTPS; the default suits http://localhost."""
+
     @classmethod
     def from_env(cls, env: Mapping[str, str] = os.environ) -> "Settings":
-        """Settings with `PRELEGAL_DB_PATH`, `PRELEGAL_STATIC_DIR` and `PRELEGAL_DOCUMENTS_PATH`
-        overriding the defaults."""
+        """Settings with `PRELEGAL_DB_PATH`, `PRELEGAL_STATIC_DIR`, `PRELEGAL_DOCUMENTS_PATH` and
+        `PRELEGAL_SECURE_COOKIES` (true or false) overriding the defaults."""
         defaults = cls()
         return cls(
             db_path=Path(env.get("PRELEGAL_DB_PATH", defaults.db_path)),
             static_dir=Path(env.get("PRELEGAL_STATIC_DIR", defaults.static_dir)),
             documents_path=Path(env.get("PRELEGAL_DOCUMENTS_PATH", defaults.documents_path)),
+            secure_cookies=env.get("PRELEGAL_SECURE_COOKIES", str(defaults.secure_cookies)).lower() in _TRUE,
         )

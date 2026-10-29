@@ -9,9 +9,9 @@ import re
 from datetime import date
 from functools import cached_property
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, TypeAdapter
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 from pydantic.alias_generators import to_camel
 
 Values = dict[str, str]
@@ -19,6 +19,12 @@ Values = dict[str, str]
 
 MAX_VALUE_LENGTH = 5000
 """The longest field value (`MAX_VALUE_LENGTH` in chat.ts)."""
+
+MAX_FIELDS = 200
+"""More fields than any document has, to bound the values a request can send."""
+
+ValuesInput = Annotated[dict[str, Annotated[str, Field(max_length=MAX_VALUE_LENGTH)]], Field(max_length=MAX_FIELDS)]
+"""Values as the API accepts them from the browser."""
 
 PARTY_KEYS = ("party1", "party2")
 """The prefixes of the two parties' field ids, e.g. "party1.company"."""

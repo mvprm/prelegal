@@ -21,6 +21,7 @@ Work is tracked in Jira (project **PL**).
 | PL-4 | Technical foundation for V1: FastAPI backend, temporary SQLite database, Docker container and start/stop scripts, placeholder sign in / sign up | ✅ Done |
 | PL-5 | AI chat for the Mutual NDA: a freeform chat fills in the NDA instead of a form | ✅ Done |
 | PL-6 | All 11 agreement types via AI chat, with help choosing the right one | ✅ Done |
+| PL-7 | Accounts (sign up, sign in) with saved documents, a professional look, and a draft disclaimer | ✅ Done |
 
 ### Agreement templates (PL-2)
 
@@ -44,16 +45,21 @@ template:
 All of them can be drafted. [`documents.json`](documents.json) describes the fields of each
 one, which drive the AI chat, the form and the generated cover page.
 
-### Drafting an agreement (PL-3, PL-5, PL-6)
+### Drafting an agreement (PL-3, PL-5, PL-6, PL-7)
 
-A web app at `/draft` where the user:
+Everyone needs an account: visitors who are not signed in are sent to sign in or sign up.
+Signed-in users land on **My documents**, which lists the agreements they have drafted, to
+open and keep editing, download as a PDF, or delete. **New document** opens `/draft`, where
+the user:
 
 1. Tells an AI assistant what they need. It picks the right agreement, or, for a document
    Prelegal cannot draft, says so and offers the closest one it can.
 2. Answers the assistant's questions about the parties and the terms, or fills in the fields
    in a form instead. The agreement (cover page and Standard Terms) updates as they go.
-3. Downloads the completed agreement as a PDF, ready to sign.
+3. Downloads the completed agreement as a PDF, ready for legal review and signature.
 
+The draft is saved to the user's account automatically as they go. Every document, on screen
+and in the PDF, says that it is a draft that should be reviewed by a lawyer before signing.
 The chat goes through the backend to an LLM; the preview and the PDF are made in the browser.
 
 ### V1 foundation (PL-4)
@@ -62,9 +68,8 @@ The app now runs as a single Docker container: a FastAPI backend serves the JSON
 `/api` and the statically built frontend everywhere else. It uses a temporary SQLite
 database with a `users` table that is recreated empty every time the container starts.
 
-Sign in (`/signin`) and sign up (`/signup`) are placeholders: the pages exist but do not
-create accounts yet, and `POST /api/auth/signin` and `/api/auth/signup` answer
-`501 Not Implemented`. The pages use the Prelegal colour scheme.
+Accounts were added in PL-7. Like everything else in the database, they last until the
+container restarts.
 
 ## Running Prelegal
 
@@ -110,7 +115,7 @@ repository, since the app reads `../templates` and `../documents.json`:
 ```bash
 cd frontend
 npm install
-npm run dev          # http://localhost:3000/draft; the chat needs the backend
+npm run dev          # http://localhost:3000; signing in and the chat need the backend
 ```
 
 | Command | What it does |

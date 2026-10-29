@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ChatError, GENERIC_ERROR, GREETING, sendChatMessage, type ChatMessage, type Draft } from "@/lib/documents/chat";
+import { ApiError, GENERIC_ERROR } from "@/lib/api";
+import { sendChatMessage, type ChatMessage, type Draft } from "@/lib/documents/chat";
 
 export interface DraftChatState {
   messages: ChatMessage[];
@@ -13,11 +14,17 @@ export interface DraftChatState {
 }
 
 /**
- * The conversation with the AI assistant. Each reply comes with the draft as it now
- * stands (the chosen document and its values), which is passed to `onDraftChange`.
+ * The conversation with the AI assistant, opening with `greeting`. Each reply comes with
+ * the draft as it now stands (the chosen document and its values), which is passed to
+ * `onDraftChange`.
  */
-export function useDraftChat(draft: Draft, today: string, onDraftChange: (draft: Draft) => void): DraftChatState {
-  const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
+export function useDraftChat(
+  draft: Draft,
+  today: string,
+  onDraftChange: (draft: Draft) => void,
+  greeting: ChatMessage,
+): DraftChatState {
+  const [messages, setMessages] = useState<ChatMessage[]>([greeting]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,8 +36,8 @@ export function useDraftChat(draft: Draft, today: string, onDraftChange: (draft:
       setMessages([...history, { role: "assistant", content: reply }]);
       onDraftChange({ documentId, values });
     } catch (e) {
-      if (!(e instanceof ChatError)) console.error(e);
-      setError(e instanceof ChatError ? e.message : GENERIC_ERROR);
+      if (!(e instanceof ApiError)) console.error(e);
+      setError(e instanceof ApiError ? e.message : GENERIC_ERROR);
     } finally {
       setPending(false);
     }

@@ -7,9 +7,7 @@ describe("AUTH_MODES", () => {
     expect(AUTH_MODES.signup.switchHref).toBe("/signin");
   });
 
-  it("tells the user that accounts are not available yet", () => {
-    for (const mode of Object.values(AUTH_MODES)) {
-      expect(mode.comingSoon).toMatch(/coming soon/);
-    }
+  it("no longer says accounts are coming soon", () => {
+    expect(JSON.stringify(AUTH_MODES)).not.toMatch(/coming soon|Mutual NDA/i);
   });
 });

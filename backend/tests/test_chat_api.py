@@ -20,8 +20,8 @@ def fake_llm(monkeypatch: pytest.MonkeyPatch) -> FakeLlm:
     return fake
 
 
-def test_chat_returns_the_reply_and_the_draft(client: TestClient, fake_llm: FakeLlm) -> None:
-    response = client.post("/api/chat", json=request_body())
+def test_chat_returns_the_reply_and_the_draft(user_client: TestClient, fake_llm: FakeLlm) -> None:
+    response = user_client.post("/api/chat", json=request_body())
 
     assert response.status_code == 200
     assert response.json() == {
@@ -31,23 +31,23 @@ def test_chat_returns_the_reply_and_the_draft(client: TestClient, fake_llm: Fake
     }
 
 
-def test_chat_chooses_a_document(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_chat_chooses_a_document(user_client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(llm, "structured_completion", FakeLlm(selection("mutual-nda"), turn("mutual-nda")))
 
-    response = client.post("/api/chat", json=request_body(documentId=None, values={}))
+    response = user_client.post("/api/chat", json=request_body(documentId=None, values={}))
 
     assert response.status_code == 200
     assert response.json()["documentId"] == "mutual-nda"
     assert response.json()["values"] == NDA_VALUES
 
 
-def test_chat_sends_form_edits_to_the_llm(client: TestClient, fake_llm: FakeLlm) -> None:
-    client.post("/api/chat", json=request_body(values=NDA_VALUES | {"jurisdiction": "courts located in Wilmington, DE"}))
+def test_chat_sends_form_edits_to_the_llm(user_client: TestClient, fake_llm: FakeLlm) -> None:
+    user_client.post("/api/chat", json=request_body(values=NDA_VALUES | {"jurisdiction": "courts located in Wilmington, DE"}))
     assert "courts located in Wilmington, DE" in fake_llm.system_prompt(0)
 
 
-def test_chat_treats_missing_values_as_empty(client: TestClient, fake_llm: FakeLlm) -> None:
-    response = client.post("/api/chat", json=request_body(values={"governingLaw": "Texas"}))
+def test_chat_treats_missing_values_as_empty(user_client: TestClient, fake_llm: FakeLlm) -> None:
+    response = user_client.post("/api/chat", json=request_body(values={"governingLaw": "Texas"}))
     values = response.json()["values"]
     assert set(values) == set(NDA.all_fields)
     assert values["purpose"] == ""
@@ -61,10 +61,10 @@ def test_chat_treats_missing_values_as_empty(client: TestClient, fake_llm: FakeL
     ],
 )
 def test_chat_reports_llm_failures(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch, error: Exception, status_code: int, detail: str
+    user_client: TestClient, monkeypatch: pytest.MonkeyPatch, error: Exception, status_code: int, detail: str
 ) -> None:
     monkeypatch.setattr(llm, "structured_completion", FakeLlm(error))
-    response = client.post("/api/chat", json=request_body())
+    response = user_client.post("/api/chat", json=request_body())
     assert response.status_code == status_code
     assert response.json() == {"detail": detail}
 
@@ -77,9 +77,9 @@ def test_chat_reports_llm_failures(
     ],
 )
 def test_chat_rejects_unknown_documents_and_fields(
-    client: TestClient, fake_llm: FakeLlm, body: dict[str, Any], detail: str
+    user_client: TestClient, fake_llm: FakeLlm, body: dict[str, Any], detail: str
 ) -> None:
-    response = client.post("/api/chat", json=body)
+    response = user_client.post("/api/chat", json=body)
     assert response.status_code == 422
     assert response.json() == {"detail": detail}
     assert fake_llm.calls == []
@@ -99,7 +99,14 @@ def test_chat_rejects_unknown_documents_and_fields(
         {key: value for key, value in request_body().items() if key != "documentId"},
     ],
 )
-def test_chat_validates_the_request(client: TestClient, fake_llm: FakeLlm, body: dict[str, Any]) -> None:
-    assert client.post("/api/chat", json=body).status_code == 422
+def test_chat_validates_the_request(user_client: TestClient, fake_llm: FakeLlm, body: dict[str, Any]) -> None:
+    assert user_client.post("/api/chat", json=body).status_code == 422
     assert fake_llm.calls == []
 
+
+
+def test_chat_needs_a_signed_in_user(client: TestClient, fake_llm: FakeLlm) -> None:
+    response = client.post("/api/chat", json=request_body())
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Please sign in to continue."}
+    assert fake_llm.calls == []

@@ -35,8 +35,8 @@ def ask(client: TestClient, text: str) -> dict:
     return response.json()
 
 
-def test_chooses_the_document_and_keeps_what_the_user_said(client: TestClient) -> None:
-    body = ask(client, "We're Acme Inc. and need a mutual NDA with Globex LLC. Delaware law.")
+def test_chooses_the_document_and_keeps_what_the_user_said(user_client: TestClient) -> None:
+    body = ask(user_client, "We're Acme Inc. and need a mutual NDA with Globex LLC. Delaware law.")
 
     assert body["documentId"] == "mutual-nda"
     values = body["values"]
@@ -47,8 +47,8 @@ def test_chooses_the_document_and_keeps_what_the_user_said(client: TestClient) -
     assert "?" in body["reply"]
 
 
-def test_explains_an_unsupported_document(client: TestClient) -> None:
-    body = ask(client, "I need an employment contract for a new engineer.")
+def test_explains_an_unsupported_document(user_client: TestClient) -> None:
+    body = ask(user_client, "I need an employment contract for a new engineer.")
 
     assert body["documentId"] is None
     assert body["values"] == {}

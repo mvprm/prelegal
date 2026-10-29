@@ -19,3 +19,15 @@ export function readTemplate(filename: string): string {
 export function readCatalog(): DocumentSpec[] {
   return JSON.parse(readFileSync(path.join(REPO_DIR, "documents.json"), "utf-8"));
 }
+
+/**
+ * What the pages that show or download documents need: the catalog, and the markdown of
+ * every template it refers to, by filename. Read at build time, so it is baked into the page.
+ */
+export function readDraftingData(): { catalog: DocumentSpec[]; templates: Record<string, string> } {
+  const catalog = readCatalog();
+  const filenames = catalog.flatMap(({ standardTerms, coverPageTemplate }) =>
+    coverPageTemplate ? [standardTerms, coverPageTemplate] : [standardTerms],
+  );
+  return { catalog, templates: Object.fromEntries(filenames.map((filename) => [filename, readTemplate(filename)])) };
+}

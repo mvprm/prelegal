@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from .. import llm
 from ..chat import MAX_MESSAGE_LENGTH, Assistant
-from ..documents import MAX_VALUE_LENGTH, CamelModel, InvalidDraftError
+from ..documents import CamelModel, InvalidDraftError, ValuesInput
 
 router = APIRouter()
 
@@ -29,7 +29,7 @@ class ChatRequest(CamelModel):
     the latest messages (`MAX_HISTORY` in chat.ts); the values carry what older ones settled."""
     document_id: str | None
     """The document being drafted, or null until the assistant has chosen one."""
-    values: Annotated[dict[str, Annotated[str, Field(max_length=MAX_VALUE_LENGTH)]], Field(max_length=200)]
+    values: ValuesInput
     """The document's values as the user currently sees them, including edits made in the form.
     Fields left out count as empty."""
     today: date

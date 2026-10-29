@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { MAX_MESSAGE_LENGTH, type ChatMessage } from "@/lib/documents/chat";
+import { inputClass, primaryButton } from "../ui";
 import type { DraftChatState } from "./useDraftChat";
 
 interface ChatProps {
@@ -81,7 +82,7 @@ export function Chat({ chat, ready }: ChatProps) {
           rows={2}
           maxLength={MAX_MESSAGE_LENGTH}
           placeholder="Type your answer…"
-          className="flex-1 resize-none rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 focus:outline-none"
+          className={`${inputClass} flex-1 resize-none`}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
@@ -92,11 +93,7 @@ export function Chat({ chat, ready }: ChatProps) {
             }
           }}
         />
-        <button
-          type="submit"
-          disabled={!canSend}
-          className="rounded-md bg-brand-purple px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-purple/90 disabled:cursor-not-allowed disabled:bg-neutral-400"
-        >
+        <button type="submit" disabled={!canSend} className={primaryButton}>
           Send
         </button>
       </form>

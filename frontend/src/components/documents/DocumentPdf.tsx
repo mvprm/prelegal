@@ -1,11 +1,13 @@
 import { Document, Link, Page, pdf, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { Block, Inline, ListItem } from "@/lib/documents/document";
+import { DRAFT_DISCLAIMER } from "@/lib/legal";
 
 // This module pulls in @react-pdf/renderer, so it is imported on demand when the user
 // downloads, keeping it out of the page's initial bundle.
 
 const styles = StyleSheet.create({
-  page: { paddingVertical: 48, paddingHorizontal: 60, fontFamily: "Helvetica", fontSize: 10, lineHeight: 1.45 },
+  page: { paddingTop: 48, paddingBottom: 72, paddingHorizontal: 60, fontFamily: "Helvetica", fontSize: 10, lineHeight: 1.45 },
+  footer: { position: "absolute", bottom: 28, left: 60, right: 60, fontSize: 7.5, color: "#737373", textAlign: "center" },
   block: { marginBottom: 6 },
   h1: { fontSize: 16, fontFamily: "Helvetica-Bold", textAlign: "center", marginBottom: 8 },
   h2: { fontSize: 10.5, fontFamily: "Helvetica-Bold", marginTop: 4 },
@@ -36,7 +38,10 @@ const styles = StyleSheet.create({
 
 const COLUMN_WIDTHS = ["30%", "35%", "35%"];
 
-/** Renders each part (e.g. the cover page and the standard terms) starting on a new page. */
+/**
+ * Renders each part (e.g. the cover page and the standard terms) starting on a new page.
+ * Every page carries the disclaimer that the document is a draft for legal review.
+ */
 function PdfDocument({ title, parts }: { title: string; parts: Block[][] }) {
   return (
     <Document title={title} creator="Prelegal" producer="Prelegal">
@@ -45,6 +50,11 @@ function PdfDocument({ title, parts }: { title: string; parts: Block[][] }) {
           {blocks.map((block, j) => (
             <PdfBlock key={j} block={block} />
           ))}
+          <Text
+            fixed
+            style={styles.footer}
+            render={({ pageNumber, totalPages }) => `${DRAFT_DISCLAIMER}  Page ${pageNumber} of ${totalPages}.`}
+          />
         </Page>
       ))}
     </Document>
