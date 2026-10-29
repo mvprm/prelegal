@@ -8,10 +8,10 @@ export default function Home() {
         A platform for drafting common legal agreements.
       </p>
       <Link
-        href="/nda"
+        href="/draft"
         className="self-start rounded-md bg-brand-blue px-4 py-2 font-semibold text-white shadow-sm hover:bg-brand-blue/90"
       >
-        Create a Mutual NDA
+        Draft an agreement
       </Link>
       <p className="text-sm text-brand-gray">
         <Link href="/signin" className="font-medium text-brand-blue hover:underline">

@@ -1,8 +1,9 @@
-import { formatDate, isValidYears, type NdaFields, type Party } from "./fields";
+import { formatDate, isValidYears, partyFieldId, PARTY_PARTS, type Values } from "./catalog";
+import { escapeMarkdown, paragraphText, tableCell } from "./markdown";
 
 /**
- * Fills the Common Paper Mutual NDA cover page (templates/Mutual-NDA-coverpage.md)
- * with the user's answers.
+ * Fills the Common Paper Mutual NDA cover page (templates/Mutual-NDA-coverpage.md) with
+ * the user's answers, using the field ids of the "mutual-nda" entry in documents.json.
  *
  * Each placeholder must appear exactly once in the template, so a change to the upstream
  * template fails loudly instead of leaving placeholders unfilled. All placeholders are
@@ -10,42 +11,44 @@ import { formatDate, isValidYears, type NdaFields, type Party } from "./fields";
  * be mistaken for a placeholder. Empty answers keep the template's own placeholder text,
  * so the preview shows what is still to be filled in.
  */
-export function fillCoverPage(template: string, fields: NdaFields): string {
-  const expires = fields.mndaTerm === "expires";
-  const forYears = fields.confidentialityTerm === "years";
+export function fillNdaCoverPage(template: string, values: Values): string {
+  const value = (id: string) => values[id] ?? "";
+  const expires = value("mndaTerm") === "expires";
+  const forYears = value("confidentialityTerm") === "years";
   const box = (checked: boolean) => `- [${checked ? "x" : " "}]`;
-  const row = (label: string, field: keyof Party) =>
-    `| ${label} | ${tableCell(fields.party1[field])} | ${tableCell(fields.party2[field])} |`;
+  const rows = Object.fromEntries(
+    PARTY_PARTS.map(({ key, row }) => [
+      key,
+      `| ${row} | ${tableCell(value(partyFieldId(1, key)))} | ${tableCell(value(partyFieldId(2, key)))} |`,
+    ]),
+  );
 
   const filled = replaceEach(template, [
     [
       "[Evaluating whether to enter into a business relationship with the other party.]",
-      paragraphText(fields.purpose),
+      paragraphText(value("purpose")),
     ],
-    ["[Today’s date]", escapeMarkdown(formatDate(fields.effectiveDate))],
+    ["[Today’s date]", escapeMarkdown(formatDate(value("effectiveDate")))],
     [
       "- [x]     Expires [1 year(s)] from Effective Date.",
-      `${box(expires)}     Expires ${formatYears(fields.mndaTermYears)} from Effective Date.`,
+      `${box(expires)}     Expires ${formatYears(value("mndaTermYears"))} from Effective Date.`,
     ],
     ["- [ ]     Continues until terminated", `${box(!expires)}     Continues until terminated`],
     [
       "- [x]     [1 year(s)] from Effective Date, but",
-      `${box(forYears)}     ${formatYears(fields.confidentialityYears)} from Effective Date, but`,
+      `${box(forYears)}     ${formatYears(value("confidentialityYears"))} from Effective Date, but`,
     ],
     ["- [ ]     In perpetuity.", `${box(!forYears)}     In perpetuity.`],
-    ["[Fill in state]", escapeMarkdown(fields.governingLaw.trim())],
+    ["[Fill in state]", escapeMarkdown(value("governingLaw").trim())],
     [
       "[Fill in city or county and state, i.e. “courts located in New Castle, DE”]",
-      escapeMarkdown(fields.jurisdiction.trim()),
+      escapeMarkdown(value("jurisdiction").trim()),
     ],
-    ["List any modifications to the MNDA", paragraphText(fields.modifications) || "None."],
-    ["| Print Name | |", row("Print Name", "name")],
-    ["| Title | | |", row("Title", "title")],
-    ["| Company | | |", row("Company", "company")],
-    [
-      "| Notice Address <label>Use either email or postal address</label> | | |",
-      row("Notice Address", "noticeAddress"),
-    ],
+    ["List any modifications to the MNDA", paragraphText(value("modifications")) || "None."],
+    ["| Print Name | |", rows.name],
+    ["| Title | | |", rows.title],
+    ["| Company | | |", rows.company],
+    ["| Notice Address <label>Use either email or postal address</label> | | |", rows.noticeAddress],
   ]);
 
   // The remaining <label> elements are hints for whoever fills in the form. User text
@@ -78,29 +81,8 @@ function replaceEach(template: string, replacements: [string, string][]): string
   return result + template.slice(position);
 }
 
-/** Backslash-escapes all ASCII punctuation so user input is always read as plain text. */
-export function escapeMarkdown(text: string): string {
-  return text.replace(/[!-/:-@[-`{-~]/g, "\\$&");
-}
-
-/** Escaped text for a paragraph, keeping the user's line breaks as hard breaks. */
-function paragraphText(text: string): string {
-  return lines(text).map(escapeMarkdown).join("\\\n");
-}
-
-/** Escaped text for a table cell, which cannot contain line breaks. */
-function tableCell(text: string): string {
-  return escapeMarkdown(lines(text).join(", "));
-}
-
-function lines(text: string): string[] {
-  return text
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-}
-
-function formatYears(years: number): string {
+function formatYears(years: string): string {
   if (!isValidYears(years)) return "[1 year(s)]";
-  return years === 1 ? "1 year" : `${years} years`;
+  const n = Number(years);
+  return n === 1 ? "1 year" : `${n} years`;
 }

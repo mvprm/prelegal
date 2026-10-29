@@ -25,10 +25,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     # No docs on the outer app: the mounted API app serves them at /api/docs.
     app = FastAPI(title="Prelegal", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
-    app.mount("/api", create_api())
+    app.mount("/api", create_api(settings))
 
-    # Mounted last so /api takes precedence. With html=True, /nda/ serves nda/index.html,
-    # /nda redirects to /nda/, and unknown paths get the exported 404.html.
+    # Mounted last so /api takes precedence. With html=True, /draft/ serves draft/index.html,
+    # /draft redirects to /draft/, and unknown paths get the exported 404.html.
     if settings.static_dir.is_dir():
         app.mount("/", StaticFiles(directory=settings.static_dir, html=True), name="frontend")
     else:

@@ -12,9 +12,9 @@ from app.main import create_app
 def static_dir(tmp_path: Path) -> Path:
     """A miniature frontend export laid out like `next build` output with trailingSlash."""
     out = tmp_path / "out"
-    (out / "nda").mkdir(parents=True)
+    (out / "draft").mkdir(parents=True)
     (out / "index.html").write_text("HOME PAGE")
-    (out / "nda" / "index.html").write_text("NDA PAGE")
+    (out / "draft" / "index.html").write_text("DRAFT PAGE")
     (out / "404.html").write_text("NOT FOUND PAGE")
     return out
 

@@ -9,8 +9,8 @@ uv run --env-file ../.env uvicorn --factory app.main:create_app --reload  # http
 ```
 
 `--env-file ../.env` loads `OPENROUTER_API_KEY` for the AI chat. Without it the rest of the
-app works, but the chat answers `503`. The live LLM test in `tests/test_nda_live.py` reads the
-key from the same file and is skipped without it.
+app works, but the chat answers `503`. The live LLM tests in `tests/test_chat_live.py` read the
+key from the same file and are skipped without it.
 
 ## Structure
 
@@ -20,8 +20,9 @@ key from the same file and is skipped without it.
 | `app/config.py` | `Settings`, read from the environment |
 | `app/db.py` | SQLite connections and `reset_database()` |
 | `app/schema.sql` | The whole database schema |
-| `app/api/` | The API app: `health.py` (`GET /api/health`), `auth.py` (sign in / sign up) and `nda.py` (the NDA chat) |
-| `app/nda.py` | The Mutual NDA's fields, the LLM's Structured Outputs schema and its prompt |
+| `app/api/` | The API app: `health.py` (`GET /api/health`), `auth.py` (sign in / sign up) and `chat.py` (`POST /api/chat`) |
+| `app/documents.py` | `Catalog`: the supported documents and their fields, loaded from `../documents.json` |
+| `app/chat.py` | `Assistant`: the prompts, the per-document Structured Outputs schemas, and merging the answers |
 | `app/llm.py` | `structured_completion()`: LiteLLM via OpenRouter to `gpt-oss-120b` on Cerebras |
 | `tests/` | pytest tests against a real temporary database and a miniature frontend export |
 
@@ -42,18 +43,36 @@ that file. It currently holds a `users` table (unique, case-insensitive `email`,
 request body (`{"email": ..., "password": ...}`; a malformed body gets `422`) and then answer
 `501 Not Implemented`.
 
-## NDA chat
+## Documents
 
-`POST /api/nda/chat` is stateless: the browser sends the whole conversation (ending with the
-user's message), the current fields and its local date, and gets back the assistant's reply
-and the fields with the user's answers filled in.
+`documents.json` in the repository root lists the 11 supported documents: for each, its
+Standard Terms template, the two parties' roles, and its fields (id, label, type, whether it
+is required, a default, and a description that both the form and the LLM see). Field types
+are `text`, `longtext`, `date`, `choice` and `years`; a field can apply only while another
+has a given value (`when`). Each party also gets a name, title, company and notice address.
+Every value is a string. The frontend reads the same file and applies the same rules.
 
-The LLM answers with Structured Outputs (`ChatTurn` in `app/nda.py`): a `reply` and
-`updates`, in which every field is null unless the user's latest message gave or changed it.
-The backend merges the non-null values into the fields, so the model can never erase what
-the user already entered. It drops values the fields would reject (a malformed date, years
-below 1, text that is too long), because the browser sends the fields back with its next
-message. LLM failures, including a blank reply, answer `502`, and a missing API key `503`.
+## Chat
+
+`POST /api/chat` is stateless: the browser sends the latest messages (ending with the user's),
+the draft (`documentId`, or null until one is chosen, and `values`) and its local date, and
+gets back the assistant's reply and the draft as it now stands.
+
+Each turn is one or two Structured Outputs calls (`Assistant.respond` in `app/chat.py`):
+
+1. Until a document is chosen, the LLM sees the catalog and answers `{reply, question,
+   documentId}`. It picks a document when one clearly fits, and otherwise explains what
+   Prelegal cannot draft and offers the closest supported document.
+2. Once there is a document, the schema is built from its fields: `{reply, question, updates,
+   switchTo}`, where every field in `updates` is null unless the user gave or changed it. On
+   the turn a document is chosen (or switched to with `switchTo`), the LLM is told to capture
+   everything said so far in the conversation.
+
+The backend merges the non-null updates, so the model can never erase what the user already
+entered, and drops values the fields would reject (such as a malformed date), because the
+browser sends the values back with its next message. The reply always asks the user
+something: `question` is required, and if it contains no question mark the backend adds one
+about the next missing field. LLM failures answer `502`, and a missing API key `503`.
 
 ## Settings
 
@@ -61,5 +80,6 @@ message. LLM failures, including a blank reply, answer `502`, and a missing API 
 | --- | --- | --- |
 | `PRELEGAL_DB_PATH` | `backend/data/prelegal.db` | `/data/prelegal.db` |
 | `PRELEGAL_STATIC_DIR` | `frontend/out` | `/app/static` |
+| `PRELEGAL_DOCUMENTS_PATH` | `documents.json` | `/app/documents.json` |
 
 Without a frontend build, the app serves the API only.

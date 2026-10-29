@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readTemplate } from "../templates";
 import { parseDocument, type Block } from "./document";
-import { defaultFields } from "./fields";
-import { escapeMarkdown, fillCoverPage } from "./fill";
+import { escapeMarkdown } from "./markdown";
 
 describe("parseDocument", () => {
   it("turns cover page links into defined terms", () => {
@@ -74,15 +73,20 @@ describe("parseDocument", () => {
     });
   });
 
-  it("parses the filled cover page and the standard terms", () => {
-    const coverPage = parseDocument(
-      fillCoverPage(readTemplate("Mutual-NDA-coverpage.md"), defaultFields),
-    );
-    const standardTerms = parseDocument(readTemplate("Mutual-NDA.md"));
+  it("shows section titles in bold", () => {
+    const [paragraph] = parseDocument('<span class="header_3" id="1.2">Support.</span> We help.');
 
-    expect(coverPage[0]).toMatchObject({ type: "heading", depth: 1 });
-    expect(coverPage.filter((block) => block.type === "list")).toHaveLength(2);
-    expect(coverPage.some((block) => block.type === "table")).toBe(true);
+    expect(paragraph).toEqual({
+      type: "paragraph",
+      children: [
+        { type: "strong", children: [{ type: "text", value: "Support." }] },
+        { type: "text", value: " We help." },
+      ],
+    });
+  });
+
+  it("parses the standard terms", () => {
+    const standardTerms = parseDocument(readTemplate("Mutual-NDA.md"));
 
     const [, terms] = standardTerms;
     expect(terms).toMatchObject({ type: "list", ordered: true });

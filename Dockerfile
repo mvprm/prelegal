@@ -2,12 +2,13 @@
 
 # ---- Frontend: static export of the Next.js app ----
 FROM node:24-slim AS frontend
-# The build reads ../templates, so templates/ must sit next to frontend/.
+# The build reads ../templates and ../documents.json, so they must sit next to frontend/.
 WORKDIR /build/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
 COPY templates/ /build/templates/
+COPY documents.json /build/
 RUN npm run build
 
 # ---- Runtime: FastAPI serving the API and the static frontend ----
@@ -22,6 +23,7 @@ COPY backend/pyproject.toml backend/uv.lock ./
 RUN --mount=from=ghcr.io/astral-sh/uv:0.12,source=/uv,target=/bin/uv \
     uv sync --frozen --no-dev
 COPY backend/app ./app
+COPY documents.json ./
 COPY --from=frontend /build/frontend/out ./static
 
 # /data is inside the container, not a volume: the database is temporary.
@@ -29,7 +31,8 @@ RUN useradd --system --uid 10001 prelegal && mkdir /data && chown prelegal /data
 USER prelegal
 ENV PATH="/app/.venv/bin:$PATH" \
     PRELEGAL_DB_PATH=/data/prelegal.db \
-    PRELEGAL_STATIC_DIR=/app/static
+    PRELEGAL_STATIC_DIR=/app/static \
+    PRELEGAL_DOCUMENTS_PATH=/app/documents.json
 
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \

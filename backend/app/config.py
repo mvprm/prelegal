@@ -20,11 +20,16 @@ class Settings:
     static_dir: Path = BACKEND_DIR.parent / "frontend" / "out"
     """The frontend's static export (`npm run build`). Optional: without it only the API runs."""
 
+    documents_path: Path = BACKEND_DIR.parent / "documents.json"
+    """The supported documents and their fields, shared with the frontend."""
+
     @classmethod
     def from_env(cls, env: Mapping[str, str] = os.environ) -> "Settings":
-        """Settings with `PRELEGAL_DB_PATH` and `PRELEGAL_STATIC_DIR` overriding the defaults."""
+        """Settings with `PRELEGAL_DB_PATH`, `PRELEGAL_STATIC_DIR` and `PRELEGAL_DOCUMENTS_PATH`
+        overriding the defaults."""
         defaults = cls()
         return cls(
             db_path=Path(env.get("PRELEGAL_DB_PATH", defaults.db_path)),
             static_dir=Path(env.get("PRELEGAL_STATIC_DIR", defaults.static_dir)),
+            documents_path=Path(env.get("PRELEGAL_DOCUMENTS_PATH", defaults.documents_path)),
         )

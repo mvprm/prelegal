@@ -1,0 +1,953 @@
+[
+  {
+    "id": "mutual-nda",
+    "name": "Mutual Non-Disclosure Agreement",
+    "description": "Lets both parties share confidential information for an agreed purpose while restricting its use and disclosure.",
+    "standardTerms": "Mutual-NDA.md",
+    "coverPageTemplate": "Mutual-NDA-coverpage.md",
+    "parties": ["Party 1", "Party 2"],
+    "fields": [
+      {
+        "id": "purpose",
+        "label": "Purpose",
+        "type": "longtext",
+        "required": true,
+        "default": "Evaluating whether to enter into a business relationship with the other party.",
+        "description": "How Confidential Information may be used"
+      },
+      {
+        "id": "effectiveDate",
+        "label": "Effective Date",
+        "type": "date",
+        "required": true,
+        "default": "today",
+        "description": "The date the MNDA starts"
+      },
+      {
+        "id": "mndaTerm",
+        "label": "MNDA Term",
+        "type": "choice",
+        "required": true,
+        "default": "expires",
+        "options": [
+          { "value": "expires", "label": "Expires a number of years after the Effective Date" },
+          { "value": "untilTerminated", "label": "Continues until terminated" }
+        ],
+        "description": "The length of this MNDA"
+      },
+      {
+        "id": "mndaTermYears",
+        "label": "MNDA Term (years)",
+        "type": "years",
+        "required": true,
+        "default": "1",
+        "when": { "field": "mndaTerm", "equals": "expires" },
+        "description": "Years until the MNDA expires"
+      },
+      {
+        "id": "confidentialityTerm",
+        "label": "Term of Confidentiality",
+        "type": "choice",
+        "required": true,
+        "default": "years",
+        "options": [
+          { "value": "years", "label": "A number of years after the Effective Date" },
+          { "value": "perpetual", "label": "In perpetuity" }
+        ],
+        "description": "How long Confidential Information is protected. Trade secrets stay protected for as long as they remain trade secrets."
+      },
+      {
+        "id": "confidentialityYears",
+        "label": "Term of Confidentiality (years)",
+        "type": "years",
+        "required": true,
+        "default": "1",
+        "when": { "field": "confidentialityTerm", "equals": "years" },
+        "description": "Years Confidential Information is protected"
+      },
+      {
+        "id": "governingLaw",
+        "label": "Governing Law",
+        "type": "text",
+        "required": true,
+        "description": "The US state whose laws govern the MNDA, e.g. Delaware"
+      },
+      {
+        "id": "jurisdiction",
+        "label": "Jurisdiction",
+        "type": "text",
+        "required": true,
+        "description": "The courts that hear disputes, e.g. courts located in New Castle, DE"
+      },
+      {
+        "id": "modifications",
+        "label": "MNDA Modifications",
+        "type": "longtext",
+        "required": false,
+        "description": "Changes to the Standard Terms, if any"
+      }
+    ]
+  },
+  {
+    "id": "cloud-service-agreement",
+    "name": "Cloud Service Agreement",
+    "description": "For selling and buying access to a cloud (SaaS) product: access and use, restrictions, fees, data, confidentiality, warranties, liability, indemnification and termination.",
+    "standardTerms": "CSA.md",
+    "parties": ["Provider", "Customer"],
+    "fields": [
+      {
+        "id": "effectiveDate",
+        "label": "Effective Date",
+        "type": "date",
+        "required": true,
+        "default": "today",
+        "description": "The date the Agreement starts"
+      },
+      {
+        "id": "orderDate",
+        "label": "Order Date",
+        "type": "date",
+        "required": true,
+        "default": "today",
+        "description": "The date of the Order Form"
+      },
+      {
+        "id": "subscriptionPeriod",
+        "label": "Subscription Period",
+        "type": "text",
+        "required": true,
+        "description": "How long the Customer may use the Cloud Service, e.g. 1 year from the Order Date"
+      },
+      {
+        "id": "fees",
+        "label": "Fees",
+        "type": "longtext",
+        "required": true,
+        "description": "What the Customer pays and when, e.g. $1,000 per month, invoiced monthly"
+      },
+      {
+        "id": "nonRenewalNoticeDate",
+        "label": "Non-Renewal Notice Date",
+        "type": "text",
+        "required": false,
+        "description": "Deadline to give notice of non-renewal, e.g. 30 days before the end of the current Subscription Period"
+      },
+      {
+        "id": "technicalSupport",
+        "label": "Technical Support",
+        "type": "longtext",
+        "required": false,
+        "description": "The support the Provider gives, e.g. email support during business hours"
+      },
+      {
+        "id": "governingLaw",
+        "label": "Governing Law",
+        "type": "text",
+        "required": true,
+        "description": "The US state whose laws govern the Agreement, e.g. Delaware"
+      },
+      {
+        "id": "chosenCourts",
+        "label": "Chosen Courts",
+        "type": "text",
+        "required": true,
+        "description": "The courts that hear disputes, e.g. the state or federal courts located in New Castle, DE"
+      },
+      {
+        "id": "generalCapAmount",
+        "label": "General Cap Amount",
+        "type": "text",
+        "required": true,
+        "description": "Each party's maximum total liability, e.g. the fees paid or payable in the 12 months before the claim"
+      },
+      {
+        "id": "providerCoveredClaims",
+        "label": "Provider Covered Claims",
+        "type": "longtext",
+        "required": false,
+        "description": "Third-party claims the Provider indemnifies against, e.g. claims that the Cloud Service infringes intellectual property rights"
+      },
+      {
+        "id": "customerCoveredClaims",
+        "label": "Customer Covered Claims",
+        "type": "longtext",
+        "required": false,
+        "description": "Third-party claims the Customer indemnifies against, e.g. claims arising from Customer Content"
+      },
+      {
+        "id": "dpa",
+        "label": "DPA",
+        "type": "text",
+        "required": false,
+        "description": "The Data Processing Agreement between the parties, if any"
+      }
+    ]
+  },
+  {
+    "id": "service-level-agreement",
+    "name": "Service Level Agreement",
+    "description": "Sets uptime and support response-time targets for a cloud service, and the service credits available when targets are missed. Supplements a Cloud Service Agreement.",
+    "standardTerms": "sla.md",
+    "parties": ["Provider", "Customer"],
+    "fields": [
+      {
+        "id": "subscriptionPeriod",
+        "label": "Subscription Period",
+        "type": "text",
+        "required": true,
+        "description": "The Subscription Period of the underlying Cloud Service Agreement, e.g. 1 year from the Order Date"
+      },
+      {
+        "id": "targetUptime",
+        "label": "Target Uptime",
+        "type": "text",
+        "required": true,
+        "description": "Minimum monthly availability of the Cloud Service, e.g. 99.9%"
+      },
+      {
+        "id": "uptimeCredit",
+        "label": "Uptime Credit",
+        "type": "longtext",
+        "required": true,
+        "description": "Credit when uptime falls below target, e.g. 10% of the monthly fees for each 0.1% below the Target Uptime"
+      },
+      {
+        "id": "targetResponseTime",
+        "label": "Target Response Time",
+        "type": "text",
+        "required": true,
+        "description": "How quickly the Provider responds to support requests, e.g. 4 business hours"
+      },
+      {
+        "id": "responseTimeCredit",
+        "label": "Response Time Credit",
+        "type": "longtext",
+        "required": false,
+        "description": "Credit when the Target Response Time is missed, e.g. 5% of the monthly fees"
+      },
+      {
+        "id": "supportChannel",
+        "label": "Support Channel",
+        "type": "text",
+        "required": true,
+        "description": "Where to send support requests, e.g. support@provider.com"
+      },
+      {
+        "id": "scheduledDowntime",
+        "label": "Scheduled Downtime",
+        "type": "longtext",
+        "required": false,
+        "description": "Planned maintenance windows that do not count against uptime, e.g. Sundays 2-4am UTC with 48 hours' notice"
+      }
+    ]
+  },
+  {
+    "id": "data-processing-agreement",
+    "name": "Data Processing Agreement",
+    "description": "Governs how a provider processes customer personal data as a processor or subprocessor: security, subprocessors, data subject requests, breach notification and international transfers under GDPR and UK law.",
+    "standardTerms": "DPA.md",
+    "parties": ["Provider", "Customer"],
+    "fields": [
+      {
+        "id": "agreement",
+        "label": "Agreement",
+        "type": "text",
+        "required": true,
+        "description": "The main agreement this DPA supplements, e.g. the Cloud Service Agreement between the parties dated January 1, 2026"
+      },
+      {
+        "id": "natureAndPurposeOfProcessing",
+        "label": "Nature and Purpose of Processing",
+        "type": "longtext",
+        "required": true,
+        "description": "What the Provider does with personal data and why, e.g. providing the Cloud Service under the Agreement"
+      },
+      {
+        "id": "durationOfProcessing",
+        "label": "Duration of Processing",
+        "type": "text",
+        "required": true,
+        "description": "How long processing lasts, e.g. the term of the Agreement"
+      },
+      {
+        "id": "categoriesOfDataSubjects",
+        "label": "Categories of Data Subjects",
+        "type": "longtext",
+        "required": true,
+        "description": "Whose personal data is processed, e.g. Customer's employees and end users"
+      },
+      {
+        "id": "categoriesOfPersonalData",
+        "label": "Categories of Personal Data",
+        "type": "longtext",
+        "required": true,
+        "description": "What kinds of personal data, e.g. names, email addresses and usage data"
+      },
+      {
+        "id": "specialCategoryData",
+        "label": "Special Category Data",
+        "type": "longtext",
+        "required": false,
+        "description": "Sensitive data such as health or biometric data, if any"
+      },
+      {
+        "id": "specialCategoryDataSafeguards",
+        "label": "Special Category Data Restrictions or Safeguards",
+        "type": "longtext",
+        "required": false,
+        "description": "Extra protections for Special Category Data, if any"
+      },
+      {
+        "id": "frequencyOfTransfer",
+        "label": "Frequency of Transfer",
+        "type": "text",
+        "required": true,
+        "description": "How often data is transferred, e.g. continuous"
+      },
+      {
+        "id": "approvedSubprocessors",
+        "label": "Approved Subprocessors",
+        "type": "longtext",
+        "required": false,
+        "description": "Subprocessors the Customer approves, e.g. AWS (hosting), or a link to the Provider's list"
+      },
+      {
+        "id": "providerSecurityContact",
+        "label": "Provider Security Contact",
+        "type": "text",
+        "required": true,
+        "description": "Who to contact about security matters, e.g. security@provider.com"
+      },
+      {
+        "id": "securityPolicy",
+        "label": "Security Policy",
+        "type": "text",
+        "required": false,
+        "description": "The security standard the Provider is audited against, e.g. SOC 2 Type II"
+      },
+      {
+        "id": "governingMemberState",
+        "label": "Governing Member State",
+        "type": "text",
+        "required": true,
+        "description": "The EU member state whose laws govern the EEA Standard Contractual Clauses, e.g. Ireland"
+      }
+    ]
+  },
+  {
+    "id": "design-partner-agreement",
+    "name": "Design Partner Agreement",
+    "description": "For an early-access program where a partner gets early access to a product and gives feedback to the provider: program participation, feedback ownership, confidentiality and term.",
+    "standardTerms": "design-partner-agreement.md",
+    "parties": ["Provider", "Partner"],
+    "fields": [
+      {
+        "id": "effectiveDate",
+        "label": "Effective Date",
+        "type": "date",
+        "required": true,
+        "default": "today",
+        "description": "The date the Agreement starts"
+      },
+      {
+        "id": "term",
+        "label": "Term",
+        "type": "text",
+        "required": true,
+        "description": "How long the program lasts, e.g. 6 months from the Effective Date"
+      },
+      {
+        "id": "program",
+        "label": "Program",
+        "type": "longtext",
+        "required": true,
+        "description": "What the Partner does in the program, e.g. use the beta product and join a monthly feedback call"
+      },
+      {
+        "id": "fees",
+        "label": "Fees",
+        "type": "text",
+        "required": false,
+        "description": "What the Partner pays, if anything"
+      },
+      {
+        "id": "governingLaw",
+        "label": "Governing Law",
+        "type": "text",
+        "required": true,
+        "description": "The US state whose laws govern the Agreement, e.g. Delaware"
+      },
+      {
+        "id": "chosenCourts",
+        "label": "Chosen Courts",
+        "type": "text",
+        "required": true,
+        "description": "The courts that hear disputes, e.g. the state or federal courts located in New Castle, DE"
+      }
+    ]
+  },
+  {
+    "id": "professional-services-agreement",
+    "name": "Professional Services Agreement",
+    "description": "For engaging a provider to perform services and produce deliverables under a Statement of Work: fees, intellectual property, confidentiality, warranties, liability and termination.",
+    "standardTerms": "psa.md",
+    "parties": ["Provider", "Customer"],
+    "fields": [
+      {
+        "id": "effectiveDate",
+        "label": "Effective Date",
+        "type": "date",
+        "required": true,
+        "default": "today",
+        "description": "The date the Agreement starts"
+      },
+      {
+        "id": "deliverables",
+        "label": "Deliverables",
+        "type": "longtext",
+        "required": true,
+        "description": "The services and deliverables in the first Statement of Work"
+      },
+      {
+        "id": "sowTerm",
+        "label": "SOW Term",
+        "type": "text",
+        "required": true,
+        "description": "How long the Statement of Work lasts, e.g. 3 months from the Effective Date"
+      },
+      {
+        "id": "fees",
+        "label": "Fees",
+        "type": "longtext",
+        "required": true,
+        "description": "What the Customer pays for the Statement of Work, e.g. $20,000, half upfront and half on delivery"
+      },
+      {
+        "id": "paymentPeriod",
+        "label": "Payment Period",
+        "type": "text",
+        "required": true,
+        "description": "How long the Customer has to pay an invoice, e.g. 30 days"
+      },
+      {
+        "id": "customerObligations",
+        "label": "Customer Obligations",
+        "type": "longtext",
+        "required": false,
+        "description": "What the Customer must provide, e.g. timely access to staff and systems"
+      },
+      {
+        "id": "rejectionPeriod",
+        "label": "Rejection Period",
+        "type": "text",
+        "required": false,
+        "description": "How long the Customer has to reject a Deliverable, e.g. 10 business days"
+      },
+      {
+        "id": "resubmissionPeriod",
+        "label": "Resubmission Period",
+        "type": "text",
+        "required": false,
+        "description": "How long the Provider has to fix a rejected Deliverable, e.g. 10 business days"
+      },
+      {
+        "id": "timeOfAssignment",
+        "label": "Time of Assignment",
+        "type": "text",
+        "required": false,
+        "description": "When ownership of Deliverables passes to the Customer, e.g. on payment of the related Fees"
+      },
+      {
+        "id": "governingLaw",
+        "label": "Governing Law",
+        "type": "text",
+        "required": true,
+        "description": "The US state whose laws govern the Agreement, e.g. Delaware"
+      },
+      {
+        "id": "chosenCourts",
+        "label": "Chosen Courts",
+        "type": "text",
+        "required": true,
+        "description": "The courts that hear disputes, e.g. the state or federal courts located in New Castle, DE"
+      },
+      {
+        "id": "generalCapAmount",
+        "label": "General Cap Amount",
+        "type": "text",
+        "required": true,
+        "description": "Each party's maximum total liability, e.g. the fees paid or payable in the 12 months before the claim"
+      },
+      {
+        "id": "increasedClaims",
+        "label": "Increased Claims",
+        "type": "longtext",
+        "required": false,
+        "description": "Claims subject to a higher liability cap, e.g. breaches of confidentiality"
+      },
+      {
+        "id": "increasedCapAmount",
+        "label": "Increased Cap Amount",
+        "type": "text",
+        "required": false,
+        "description": "The higher cap for Increased Claims, e.g. 3 times the General Cap Amount"
+      },
+      {
+        "id": "unlimitedClaims",
+        "label": "Unlimited Claims",
+        "type": "longtext",
+        "required": false,
+        "description": "Claims with no liability cap, e.g. fraud or gross negligence"
+      },
+      {
+        "id": "providerCoveredClaims",
+        "label": "Provider Covered Claims",
+        "type": "longtext",
+        "required": false,
+        "description": "Third-party claims the Provider indemnifies against, e.g. claims that the Deliverables infringe intellectual property rights"
+      },
+      {
+        "id": "customerCoveredClaims",
+        "label": "Customer Covered Claims",
+        "type": "longtext",
+        "required": false,
+        "description": "Third-party claims the Customer indemnifies against, e.g. claims arising from materials the Customer provides"
+      },
+      {
+        "id": "additionalWarranties",
+        "label": "Additional Warranties",
+        "type": "longtext",
+        "required": false,
+        "description": "Warranties beyond the Standard Terms, if any"
+      },
+      {
+        "id": "customerPolicies",
+        "label": "Customer Policies",
+        "type": "longtext",
+        "required": false,
+        "description": "Customer policies the Provider must follow, e.g. the Customer's vendor code of conduct"
+      },
+      {
+        "id": "securityPolicy",
+        "label": "Security Policy",
+        "type": "text",
+        "required": false,
+        "description": "Security requirements the Provider must meet, if any"
+      },
+      {
+        "id": "insuranceMinimums",
+        "label": "Insurance Minimums",
+        "type": "longtext",
+        "required": false,
+        "description": "Insurance each party must carry, e.g. $1,000,000 general liability"
+      },
+      {
+        "id": "dpa",
+        "label": "DPA",
+        "type": "text",
+        "required": false,
+        "description": "The Data Processing Agreement between the parties, if any"
+      }
+    ]
+  },
+  {
+    "id": "partnership-agreement",
+    "name": "Partnership Agreement",
+    "description": "For a business partnership in which each party performs agreed obligations: payment, a trademark license, privacy, escalation, confidentiality, liability and termination.",
+    "standardTerms": "Partnership-Agreement.md",
+    "parties": ["Company", "Partner"],
+    "fields": [
+      {
+        "id": "effectiveDate",
+        "label": "Effective Date",
+        "type": "date",
+        "required": true,
+        "default": "today",
+        "description": "The date the Agreement starts"
+      },
+      {
+        "id": "endDate",
+        "label": "End Date",
+        "type": "text",
+        "required": true,
+        "description": "When the partnership ends, e.g. 1 year after the Effective Date"
+      },
+      {
+        "id": "obligations",
+        "label": "Obligations",
+        "type": "longtext",
+        "required": true,
+        "description": "What each party commits to do, e.g. the Partner resells the Company's product and the Company provides sales training"
+      },
+      {
+        "id": "territory",
+        "label": "Territory",
+        "type": "text",
+        "required": false,
+        "description": "Where the parties may use each other's brands, e.g. the United States"
+      },
+      {
+        "id": "paymentSchedule",
+        "label": "Payment Schedule",
+        "type": "longtext",
+        "required": false,
+        "description": "Fees and when they are paid, e.g. 20% of net revenue, paid quarterly"
+      },
+      {
+        "id": "paymentProcess",
+        "label": "Payment Process",
+        "type": "text",
+        "required": false,
+        "description": "How invoices are issued and paid, e.g. invoiced quarterly, due within 30 days"
+      },
+      {
+        "id": "brandGuidelines",
+        "label": "Brand Guidelines",
+        "type": "text",
+        "required": false,
+        "description": "Rules for using each party's brand, e.g. a link to the brand guidelines"
+      },
+      {
+        "id": "additionalWarranties",
+        "label": "Additional Warranties",
+        "type": "longtext",
+        "required": false,
+        "description": "Warranties beyond the Standard Terms, if any"
+      },
+      {
+        "id": "governingLaw",
+        "label": "Governing Law",
+        "type": "text",
+        "required": true,
+        "description": "The US state whose laws govern the Agreement, e.g. Delaware"
+      },
+      {
+        "id": "chosenCourts",
+        "label": "Chosen Courts",
+        "type": "text",
+        "required": true,
+        "description": "The courts that hear disputes, e.g. the state or federal courts located in New Castle, DE"
+      },
+      {
+        "id": "generalCapAmount",
+        "label": "General Cap Amount",
+        "type": "text",
+        "required": true,
+        "description": "Each party's maximum total liability, e.g. the amounts paid under the Agreement in the 12 months before the claim"
+      },
+      {
+        "id": "increasedClaims",
+        "label": "Increased Claims",
+        "type": "longtext",
+        "required": false,
+        "description": "Claims subject to a higher liability cap, e.g. breaches of confidentiality"
+      },
+      {
+        "id": "increasedCapAmount",
+        "label": "Increased Cap Amount",
+        "type": "text",
+        "required": false,
+        "description": "The higher cap for Increased Claims, e.g. 3 times the General Cap Amount"
+      },
+      {
+        "id": "unlimitedClaims",
+        "label": "Unlimited Claims",
+        "type": "longtext",
+        "required": false,
+        "description": "Claims with no liability cap, e.g. fraud or gross negligence"
+      },
+      {
+        "id": "companyCoveredClaims",
+        "label": "Company Covered Claims",
+        "type": "longtext",
+        "required": false,
+        "description": "Third-party claims the Company indemnifies against, if any"
+      },
+      {
+        "id": "partnerCoveredClaims",
+        "label": "Partner Covered Claims",
+        "type": "longtext",
+        "required": false,
+        "description": "Third-party claims the Partner indemnifies against, if any"
+      },
+      {
+        "id": "dpa",
+        "label": "DPA",
+        "type": "text",
+        "required": false,
+        "description": "The Data Processing Agreement between the parties, if any"
+      }
+    ]
+  },
+  {
+    "id": "business-associate-agreement",
+    "name": "Business Associate Agreement",
+    "description": "Required under HIPAA when a provider handles protected health information (PHI) for a covered entity: permitted uses, safeguards, breach reporting and return of PHI.",
+    "standardTerms": "BAA.md",
+    "parties": ["Provider", "Company"],
+    "fields": [
+      {
+        "id": "agreement",
+        "label": "Agreement",
+        "type": "text",
+        "required": true,
+        "description": "The main agreement under which the Provider handles PHI, e.g. the Cloud Service Agreement between the parties dated January 1, 2026"
+      },
+      {
+        "id": "baaEffectiveDate",
+        "label": "BAA Effective Date",
+        "type": "date",
+        "required": true,
+        "default": "today",
+        "description": "The date the BAA starts"
+      },
+      {
+        "id": "breachNotificationPeriod",
+        "label": "Breach Notification Period",
+        "type": "text",
+        "required": true,
+        "description": "How quickly the Provider reports a breach, e.g. 5 business days after discovery"
+      },
+      {
+        "id": "limitations",
+        "label": "Limitations",
+        "type": "longtext",
+        "required": false,
+        "description": "Restrictions on disclosing PHI to subcontractors or offshore, if any"
+      }
+    ]
+  },
+  {
+    "id": "software-license-agreement",
+    "name": "Software License Agreement",
+    "description": "For licensing software that the customer installs and runs on its own systems: license grant, restrictions, fees, support, warranties, liability, indemnification and termination.",
+    "standardTerms": "Software-License-Agreement.md",
+    "parties": ["Provider", "Customer"],
+    "fields": [
+      {
+        "id": "effectiveDate",
+        "label": "Effective Date",
+        "type": "date",
+        "required": true,
+        "default": "today",
+        "description": "The date the Agreement starts"
+      },
+      {
+        "id": "orderDate",
+        "label": "Order Date",
+        "type": "date",
+        "required": true,
+        "default": "today",
+        "description": "The date of the Order Form"
+      },
+      {
+        "id": "subscriptionPeriod",
+        "label": "Subscription Period",
+        "type": "text",
+        "required": true,
+        "description": "How long the license lasts, e.g. 1 year from the Order Date"
+      },
+      {
+        "id": "permittedUses",
+        "label": "Permitted Uses",
+        "type": "longtext",
+        "required": true,
+        "description": "What the Customer may use the Software for, e.g. internal business purposes"
+      },
+      {
+        "id": "licenseLimits",
+        "label": "License Limits",
+        "type": "text",
+        "required": false,
+        "description": "Usage limits, e.g. up to 50 users or 2 servers"
+      },
+      {
+        "id": "fees",
+        "label": "Fees",
+        "type": "longtext",
+        "required": true,
+        "description": "What the Customer pays, e.g. $12,000 per year"
+      },
+      {
+        "id": "paymentProcess",
+        "label": "Payment Process",
+        "type": "text",
+        "required": false,
+        "description": "How fees are invoiced and paid, e.g. invoiced annually in advance, due within 30 days"
+      },
+      {
+        "id": "nonRenewalNoticeDate",
+        "label": "Non-Renewal Notice Date",
+        "type": "text",
+        "required": false,
+        "description": "Deadline to give notice of non-renewal, e.g. 30 days before the end of the current Subscription Period"
+      },
+      {
+        "id": "warrantyPeriod",
+        "label": "Warranty Period",
+        "type": "text",
+        "required": false,
+        "description": "How long the Software is warranted to match its documentation, e.g. 90 days from delivery"
+      },
+      {
+        "id": "deletionProcedure",
+        "label": "Deletion Procedure",
+        "type": "longtext",
+        "required": false,
+        "description": "How the Customer removes the Software when the license ends, e.g. delete all copies and certify in writing"
+      },
+      {
+        "id": "governingLaw",
+        "label": "Governing Law",
+        "type": "text",
+        "required": true,
+        "description": "The US state whose laws govern the Agreement, e.g. Delaware"
+      },
+      {
+        "id": "chosenCourts",
+        "label": "Chosen Courts",
+        "type": "text",
+        "required": true,
+        "description": "The courts that hear disputes, e.g. the state or federal courts located in New Castle, DE"
+      },
+      {
+        "id": "generalCapAmount",
+        "label": "General Cap Amount",
+        "type": "text",
+        "required": true,
+        "description": "Each party's maximum total liability, e.g. the fees paid or payable in the 12 months before the claim"
+      },
+      {
+        "id": "increasedClaims",
+        "label": "Increased Claims",
+        "type": "longtext",
+        "required": false,
+        "description": "Claims subject to a higher liability cap, e.g. breaches of confidentiality"
+      },
+      {
+        "id": "increasedCapAmount",
+        "label": "Increased Cap Amount",
+        "type": "text",
+        "required": false,
+        "description": "The higher cap for Increased Claims, e.g. 3 times the General Cap Amount"
+      },
+      {
+        "id": "unlimitedClaims",
+        "label": "Unlimited Claims",
+        "type": "longtext",
+        "required": false,
+        "description": "Claims with no liability cap, e.g. fraud or gross negligence"
+      },
+      {
+        "id": "providerCoveredClaims",
+        "label": "Provider Covered Claims",
+        "type": "longtext",
+        "required": false,
+        "description": "Third-party claims the Provider indemnifies against, e.g. claims that the Software infringes intellectual property rights"
+      },
+      {
+        "id": "customerCoveredClaims",
+        "label": "Customer Covered Claims",
+        "type": "longtext",
+        "required": false,
+        "description": "Third-party claims the Customer indemnifies against, e.g. claims arising from the Customer's misuse of the Software"
+      },
+      {
+        "id": "additionalWarranties",
+        "label": "Additional Warranties",
+        "type": "longtext",
+        "required": false,
+        "description": "Warranties beyond the Standard Terms, if any"
+      }
+    ]
+  },
+  {
+    "id": "pilot-agreement",
+    "name": "Pilot Agreement",
+    "description": "For a short-term trial that lets a prospective customer evaluate a product before committing to a full commercial agreement, with limited scope and easy termination.",
+    "standardTerms": "Pilot-Agreement.md",
+    "parties": ["Provider", "Customer"],
+    "fields": [
+      {
+        "id": "effectiveDate",
+        "label": "Effective Date",
+        "type": "date",
+        "required": true,
+        "default": "today",
+        "description": "The date the Agreement starts"
+      },
+      {
+        "id": "pilotPeriod",
+        "label": "Pilot Period",
+        "type": "text",
+        "required": true,
+        "description": "How long the Customer may evaluate the Product, e.g. 30 days from the Effective Date"
+      },
+      {
+        "id": "generalCapAmount",
+        "label": "General Cap Amount",
+        "type": "text",
+        "required": true,
+        "description": "Each party's maximum total liability, e.g. $10,000"
+      },
+      {
+        "id": "governingLaw",
+        "label": "Governing Law",
+        "type": "text",
+        "required": true,
+        "description": "The US state whose laws govern the Agreement, e.g. Delaware"
+      },
+      {
+        "id": "chosenCourts",
+        "label": "Chosen Courts",
+        "type": "text",
+        "required": true,
+        "description": "The courts that hear disputes, e.g. the state or federal courts located in New Castle, DE"
+      }
+    ]
+  },
+  {
+    "id": "ai-addendum",
+    "name": "AI Addendum",
+    "description": "Addendum to a commercial agreement covering the provider's AI services: rights in customer input and generated output, restrictions on training models with customer data, and related disclaimers.",
+    "standardTerms": "AI-Addendum.md",
+    "parties": ["Provider", "Customer"],
+    "fields": [
+      {
+        "id": "agreement",
+        "label": "Agreement",
+        "type": "text",
+        "required": true,
+        "description": "The commercial agreement this addendum supplements, e.g. the Cloud Service Agreement between the parties dated January 1, 2026"
+      },
+      {
+        "id": "trainingData",
+        "label": "Training Data",
+        "type": "longtext",
+        "required": false,
+        "description": "Customer data the Provider may train models on; leave empty if training is not allowed"
+      },
+      {
+        "id": "trainingPurposes",
+        "label": "Training Purposes",
+        "type": "longtext",
+        "required": false,
+        "description": "What training on Training Data may be for, e.g. improving the Provider's models for all customers"
+      },
+      {
+        "id": "trainingRestrictions",
+        "label": "Training Restrictions",
+        "type": "longtext",
+        "required": false,
+        "description": "Conditions on training, e.g. data must be de-identified first"
+      },
+      {
+        "id": "improvementRestrictions",
+        "label": "Improvement Restrictions",
+        "type": "longtext",
+        "required": false,
+        "description": "Limits on using Input and Output to improve the AI Services, if any"
+      }
+    ]
+  }
+]
