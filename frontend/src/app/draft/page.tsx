@@ -22,12 +22,13 @@ export default function DraftPage() {
           <header className="mb-8 space-y-2">
             <h1 className="text-2xl font-bold tracking-tight text-brand-navy sm:text-3xl">Draft an agreement</h1>
             <p className="max-w-2xl text-brand-gray">
-              Tell our AI assistant what you need. It will suggest the right{" "}
+              Choose a{" "}
               <a href="https://commonpaper.com/standards/" target="_blank" rel="noreferrer" className="underline">
                 Common Paper
               </a>{" "}
-              agreement and fill it in with you, or you can edit the fields yourself. Your draft is saved
-              to My documents as you go; download it as a PDF when you are done.
+              agreement, or tell our AI assistant what you need and it will suggest the right one. It then
+              fills it in with you, or you can edit the fields yourself. Your draft is saved to My documents
+              as you go; download it as a PDF when you are done.
             </p>
           </header>
           {/* DraftWorkspace reads ?id=, which a static export can only do inside Suspense. */}

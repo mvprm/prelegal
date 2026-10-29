@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useSyncExternalStore } from "react";
-import { findDocument, missingFields, type DocumentSpec } from "@/lib/documents/catalog";
+import { defaultValues, findDocument, missingFields, type DocumentSpec } from "@/lib/documents/catalog";
 import { GREETING, type ChatMessage, type Draft } from "@/lib/documents/chat";
 import { buildCoverPage } from "@/lib/documents/coverPage";
 import { parseDocument } from "@/lib/documents/document";
@@ -38,6 +38,16 @@ export function DraftCreator({ catalog, templates, id, initialDraft }: DraftCrea
   const autosave = useAutosave(id, draft, initialDraft);
   const [tab, setTab] = useState<Tab>("chat");
 
+  /**
+   * Chooses the document from the list rather than through the chat. The assistant is told,
+   * as if the user had written it, so it carries on with the first questions about it.
+   */
+  function chooseDocument(chosen: DocumentSpec) {
+    const next: Draft = { documentId: chosen.id, values: defaultValues(chosen, today) };
+    setDraft(next);
+    chat.send(`I'd like to draft a ${chosen.name}.`, next);
+  }
+
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-10">
       <section aria-label="Document details" className="min-w-0">
@@ -62,7 +72,7 @@ export function DraftCreator({ catalog, templates, id, initialDraft }: DraftCrea
       {spec ? (
         <Preview spec={spec} draft={draft} templates={templates} autosave={autosave} />
       ) : (
-        <Placeholder catalog={catalog} />
+        <Placeholder catalog={catalog} onChoose={chooseDocument} disabled={today === "" || chat.pending} />
       )}
     </div>
   );
@@ -150,21 +160,41 @@ function Preview({
   );
 }
 
-/** Shown until a document is chosen: what the assistant can draft. */
-function Placeholder({ catalog }: { catalog: DocumentSpec[] }) {
+/** Shown until a document is chosen: what can be drafted, to choose from directly. */
+function Placeholder({
+  catalog,
+  onChoose,
+  disabled,
+}: {
+  catalog: DocumentSpec[];
+  onChoose: (spec: DocumentSpec) => void;
+  /** While the page loads or the assistant is replying. */
+  disabled: boolean;
+}) {
   return (
     <section aria-labelledby="documents-heading" className="min-w-0 space-y-4">
       <h2 id="documents-heading" className="text-base font-semibold text-brand-navy">
-        Documents we can draft
+        Choose a document
       </h2>
       <p className="text-sm text-brand-gray">
-        Tell the assistant what you need and it will suggest the right one. The preview appears here.
+        Pick the agreement you need, or tell the assistant about your situation and it will suggest
+        the right one. The preview appears here.
       </p>
       <ul className="grid gap-3 sm:grid-cols-2">
         {catalog.map((spec) => (
-          <li key={spec.id} className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
-            <p className="font-semibold text-brand-navy">{spec.name}</p>
-            <p className="mt-1 text-sm text-brand-gray">{spec.description}</p>
+          <li key={spec.id}>
+            <button
+              type="button"
+              onClick={() => onChoose(spec)}
+              disabled={disabled}
+              className="group flex h-full w-full flex-col rounded-lg border border-neutral-200 bg-white p-4 text-left shadow-sm transition hover:border-brand-blue hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-neutral-200 disabled:hover:shadow-sm"
+            >
+              <span className="font-semibold text-brand-navy">{spec.name}</span>
+              <span className="mt-1 flex-1 text-sm text-brand-gray">{spec.description}</span>
+              <span className="mt-3 text-sm font-semibold text-brand-blue group-hover:underline group-disabled:no-underline">
+                Draft this agreement →
+              </span>
+            </button>
           </li>
         ))}
       </ul>
