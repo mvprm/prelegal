@@ -49,7 +49,7 @@ def user_client(client: TestClient) -> TestClient:
 @pytest.fixture
 def other_client(user_client: TestClient) -> TestClient:
     """A second browser on the same app, signed in to another account (grace@example.com)."""
-    # Not entered as a context manager, so the app's lifespan (which resets the database) does not run again.
+    # Not entered as a context manager, so the app's lifespan does not run again.
     other = TestClient(user_client.app)
     assert sign_up(other, "grace@example.com").status_code == 201
     return other

@@ -26,7 +26,8 @@ COPY backend/app ./app
 COPY documents.json ./
 COPY --from=frontend /build/frontend/out ./static
 
-# /data is inside the container, not a volume: the database is temporary.
+# /data holds the database. The start scripts mount the prelegal-data volume there, so it
+# outlives the container; a new volume takes this directory's owner, so the app can write.
 RUN useradd --system --uid 10001 prelegal && mkdir /data && chown prelegal /data
 USER prelegal
 ENV PATH="/app/.venv/bin:$PATH" \

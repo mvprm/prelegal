@@ -14,7 +14,7 @@ from datetime import UTC, datetime, timedelta
 from functools import cache
 
 SESSION_LIFETIME = timedelta(days=7)
-"""How long a session lasts. Sessions also end when the app restarts, with the database."""
+"""How long a session lasts."""
 
 MIN_PASSWORD_LENGTH = 8
 MAX_PASSWORD_LENGTH = 128
@@ -78,8 +78,8 @@ def authenticate(conn: sqlite3.Connection, email: str, password: str) -> User | 
 
 def start_session(conn: sqlite3.Connection, user: User, now: datetime) -> str:
     """Starts a session for `user` and returns its token, for the cookie."""
-    # Expired sessions are no use to anyone; clearing them here keeps the table small.
-    conn.execute("DELETE FROM sessions WHERE expires_at <= ?", (_timestamp(now),))
+    # Clearing expired sessions whenever one starts keeps the table small.
+    delete_expired_sessions(conn, now)
     token = secrets.token_urlsafe(32)
     conn.execute(
         "INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)",
@@ -100,6 +100,11 @@ def session_user(conn: sqlite3.Connection, token: str, now: datetime) -> User | 
 
 def end_session(conn: sqlite3.Connection, token: str) -> None:
     conn.execute("DELETE FROM sessions WHERE token_hash = ?", (_hash_token(token),))
+
+
+def delete_expired_sessions(conn: sqlite3.Connection, now: datetime) -> None:
+    """Deletes the sessions that have expired."""
+    conn.execute("DELETE FROM sessions WHERE expires_at <= ?", (_timestamp(now),))
 
 
 def _scrypt(password: str, salt: bytes, n: int, r: int, p: int) -> bytes:

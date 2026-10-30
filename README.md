@@ -47,15 +47,17 @@ Open **http://localhost:8000** and create an account. The API docs are at
 http://localhost:8000/api/docs. To stop the app, run `scripts/stop-mac.sh`,
 `scripts/stop-linux.sh` or `scripts\stop-windows.ps1`.
 
-> The database is temporary. It is recreated empty every time the container starts, so
-> accounts and documents last until the next restart.
+Accounts and documents are kept in a Docker volume, `prelegal-data`, so they survive
+stopping, restarting and updating the app. To start over with an empty database, stop the
+app and run `docker volume rm prelegal-data`, or set `PRELEGAL_RESET_DB=true` in `.env` to
+empty it on every start.
 
 ## How it works
 
 ```
 Browser ── static Next.js app (chat, form, live preview, PDF) ──┐
                                                                  │ same origin, session cookie
-FastAPI ── /api/auth, /api/documents ── SQLite (users, sessions, documents)
+FastAPI ── /api/auth, /api/documents ── SQLite in a Docker volume (users, sessions, documents)
         └─ /api/chat ── LiteLLM → OpenRouter → gpt-oss-120b on Cerebras (Structured Outputs)
 ```
 
@@ -129,8 +131,9 @@ Work is tracked in Jira (project **PL**).
 | PL-7 | Accounts, saved documents, a professional look and the draft disclaimer | ✅ Done |
 | PL-8 | Bug fixes: choose the agreement from a list; reopening a saved document | ✅ Done |
 | PL-9 | Bug fix: the AI keeps what the user said in their first message over the defaults | ✅ Done |
-| PL-10 | Styled dialogs instead of the browser's popups | In review |
-| PL-11 | Rename saved documents | In review |
+| PL-10 | Styled dialogs instead of the browser's popups | ✅ Done |
+| PL-11 | Rename saved documents | ✅ Done |
+| PL-12 | Persistent database: accounts and documents survive restarts | ✅ Done |
 
 ## License
 

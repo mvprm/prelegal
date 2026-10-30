@@ -8,7 +8,7 @@ import pytest
 
 from app import accounts
 from app.accounts import SESSION_LIFETIME, EmailTakenError, User
-from app.db import connect, reset_database
+from app.db import connect, migrate_database
 
 NOW = datetime(2026, 10, 28, 12, 0, tzinfo=UTC)
 
@@ -16,7 +16,7 @@ NOW = datetime(2026, 10, 28, 12, 0, tzinfo=UTC)
 @pytest.fixture
 def db(tmp_path: Path) -> Iterator[sqlite3.Connection]:
     path = tmp_path / "prelegal.db"
-    reset_database(path)
+    migrate_database(path)
     with closing(connect(path)) as conn:
         yield conn
 

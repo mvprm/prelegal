@@ -16,16 +16,16 @@ key from the same file and are skipped without it.
 
 | Path | What it does |
 | --- | --- |
-| `app/main.py` | `create_app()`: resets the database on startup, mounts the API at `/api` and the frontend at `/` |
+| `app/main.py` | `create_app()`: brings the database up to date on startup, mounts the API at `/api` and the frontend at `/` |
 | `app/config.py` | `Settings`, read from the environment |
-| `app/db.py` | SQLite connections and `reset_database()` |
-| `app/schema.sql` | The whole database schema |
+| `app/db.py` | SQLite connections, and `migrate_database()` to apply the migrations |
+| `app/migrations/` | The database schema, as numbered SQL migrations |
 | `app/api/` | The API app: `health.py` (`GET /api/health`), `auth.py` (accounts), `documents.py` (saved documents), `chat.py` (`POST /api/chat`), and `deps.py` (the request's database connection and signed-in user) |
 | `app/accounts.py` | Password hashing (scrypt) and sign-in sessions |
 | `app/documents.py` | `Catalog`: the supported documents and their fields, loaded from `../documents.json` |
 | `app/chat.py` | `Assistant`: the prompts, the per-document Structured Outputs schemas, and merging the answers |
 | `app/llm.py` | `structured_completion()`: LiteLLM via OpenRouter to `gpt-oss-120b` on Cerebras |
-| `tests/` | pytest tests against a real temporary database and a miniature frontend export |
+| `tests/` | pytest tests against real SQLite databases in temporary folders and a miniature frontend export |
 
 The API is a separate FastAPI app mounted at `/api`, so unknown `/api` paths and wrong
 methods get JSON errors rather than the frontend's 404 page. Its interactive docs are at
@@ -33,11 +33,21 @@ methods get JSON errors rather than the frontend's 404 page. Its interactive doc
 
 ## Database
 
-The database is temporary: every time the app starts, it deletes the SQLite file and
-recreates it from `app/schema.sql`. There are no migrations, so change the schema by editing
-that file. It holds `users`, their `sessions`, and their saved `documents`; deleting a user
-deletes the other two. Because of the reset, accounts and documents last only until the app
-restarts.
+The database holds `users`, their `sessions`, and their saved `documents`; deleting a user
+deletes the other two. It is kept between starts: in Docker, in the `prelegal-data` volume.
+
+Its schema is built by the numbered SQL files in `app/migrations/` (`0001_initial.sql`, ...).
+On every start the app creates the database if there is none and applies the migrations it
+has not had yet, each in its own transaction, so a failing one leaves no trace and stops the
+app. The database counts the migrations it has in `PRAGMA user_version`. To change the
+schema, add the next file, and never edit one that has been released: databases that already
+applied it would not see the change. The app refuses to start with a database that has more
+migrations than it knows (made by a newer version), or one made before PL-12, when the
+database was recreated on every start (delete it, or start once with `PRELEGAL_RESET_DB`).
+
+The database uses SQLite's write-ahead log, so reading does not wait for writing. Sign-in
+sessions that have expired are deleted at every start. `PRELEGAL_RESET_DB=true` deletes the
+database on every start instead, for development.
 
 ## Accounts
 
@@ -117,5 +127,6 @@ about the next missing field. LLM failures answer `502`, and a missing API key `
 | `PRELEGAL_STATIC_DIR` | `frontend/out` | `/app/static` |
 | `PRELEGAL_DOCUMENTS_PATH` | `documents.json` | `/app/documents.json` |
 | `PRELEGAL_SECURE_COOKIES` | `false` | `false` (turn on when serving over HTTPS) |
+| `PRELEGAL_RESET_DB` | `false` | `false` (`true` empties the database on every start) |
 
 Without a frontend build, the app serves the API only.

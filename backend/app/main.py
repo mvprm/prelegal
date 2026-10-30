@@ -2,14 +2,16 @@
 
 import logging
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, closing
+from datetime import UTC, datetime
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from .accounts import delete_expired_sessions
 from .api import create_api
 from .config import Settings
-from .db import reset_database
+from .db import connect, delete_database, migrate_database
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +22,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-        reset_database(settings.db_path)
+        if settings.reset_db:
+            log.warning("PRELEGAL_RESET_DB is on: deleting the database at %s", settings.db_path)
+            delete_database(settings.db_path)
+        migrate_database(settings.db_path)
+        with closing(connect(settings.db_path)) as conn, conn:
+            delete_expired_sessions(conn, datetime.now(UTC))
         yield
 
     # No docs on the outer app: the mounted API app serves them at /api/docs.
