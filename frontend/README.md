@@ -24,7 +24,7 @@ Requires Node.js 24.
 ```bash
 npm install
 npm run dev     # http://localhost:3000, without the API (see below)
-npm test        # unit tests (Vitest)
+npm test        # unit and component tests (Vitest)
 npm run lint
 npm run build   # static site in out/
 ```
@@ -75,6 +75,12 @@ as described in `../backend/README.md`) or with Docker.
   PDF's own colours so it matches the downloaded document. Shared buttons, inputs, the logo
   and loading states are in `src/components/ui.tsx`, and the signed-in pages' header and
   footer in `src/components/AppShell.tsx`.
+- **Dialogs** use `Modal` (`src/components/Modal.tsx`), on the browser's own `<dialog>`, which
+  keeps focus inside and the page behind inert; `ConfirmDialog` asks before an action such as
+  deleting (with the red `destructiveButton`, the one colour outside the brand palette). The app never uses the browser's `confirm`, `alert` or `prompt` boxes.
+
+**Tests** run in Node. Component tests (`*.test.tsx`) start with `// @vitest-environment jsdom`
+and use Testing Library; `vitest.setup.ts` fills in what jsdom lacks, such as `showModal()`.
 
 The agreement text is © Common Paper, used under
 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); see `templates/LICENSE.txt`.
