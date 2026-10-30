@@ -109,15 +109,15 @@ Jira project **PL**. Branches are `feature/PL-N-slug`, merged into `main` with `
 - The NDA `purpose` description in `documents.json` now says what the field is for ("Why the parties are sharing confidential information…"); it is also the form's hint, so keep it user-facing.
 - Live tests in `tests/test_chat_live.py` cover the ticket's example message and keeping a default the user wants.
 
-### PL-10: Styled modals (in review)
+### PL-10: Styled modals (done)
 - `src/components/Modal.tsx`: `Modal` (controlled `open`/`onClose` on a native `<dialog>` with `showModal()`; content rendered only while open; Esc and backdrop clicks ask the parent to close; `dismissible={false}` while busy; focuses `[data-autofocus]`) and `ConfirmDialog` (async `onConfirm`; a failure stays in the dialog to retry; `destructive` = red `destructiveButton` from `ui.tsx` and Cancel focused). No `window.confirm`/`alert`/`prompt` in the app.
 - Component tests: `*.test.tsx` with `// @vitest-environment jsdom` and Testing Library; `vitest.setup.ts` stubs jsdom's missing `showModal()`/`close()` and runs Testing Library's cleanup. Esc is simulated with a `cancel` event.
 
-### PL-11: Rename documents (in review)
+### PL-11: Rename documents (done)
 - `documents.title` (NULL = called after its kind of document). `PATCH /api/documents/{id}` `{title}` sets it (trimmed, max 120, empty = NULL, readable 422; `updated_at` unchanged); the autosave `PUT` never touches it. `MAX_TITLE_LENGTH` is in both `api/documents.py` and `saved.ts`.
 - Frontend: `documentName(title, defaultName)` in `saved.ts` is the one display name. My documents: Rename opens `RenameDialog` (on `Modal`; `useDialogAction` in `Modal.tsx` is the pending/error cycle shared with `ConfirmDialog`). The title is kept out of `Draft` (chat and autosave): `DraftWorkspace` passes it to `DraftCreator`'s heading and to `downloadDocumentPdf` (PDF title; `pdfFileName(spec, values, title)`).
 
-### PL-12: Persistent database (in review)
+### PL-12: Persistent database (done)
 - The DB lives in the `prelegal-data` Docker volume at `/data` (start scripts `-v prelegal-data:/data`; stop keeps it; `docker volume rm prelegal-data` deletes it). `PRELEGAL_RESET_DB=true` deletes it on every start instead.
 - Schema = numbered migrations `backend/app/migrations/NNNN_name.sql` (0001 = the former `schema.sql`, with `documents.title`). `db.migrate_database()` applies the new ones at startup, each in a `BEGIN IMMEDIATE` transaction (statements run one by one, since `executescript()` commits), recording the count in `PRAGMA user_version`. To change the schema, add the next file; never edit a released one. It refuses a DB newer than the code, numbering gaps, and a pre-PL-12 DB (tables at version 0).
 - WAL journal mode (set once, stored in the file); expired sessions are deleted at startup (`accounts.delete_expired_sessions`).

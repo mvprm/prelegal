@@ -131,9 +131,9 @@ Work is tracked in Jira (project **PL**).
 | PL-7 | Accounts, saved documents, a professional look and the draft disclaimer | ✅ Done |
 | PL-8 | Bug fixes: choose the agreement from a list; reopening a saved document | ✅ Done |
 | PL-9 | Bug fix: the AI keeps what the user said in their first message over the defaults | ✅ Done |
-| PL-10 | Styled dialogs instead of the browser's popups | In review |
-| PL-11 | Rename saved documents | In review |
-| PL-12 | Persistent database: accounts and documents survive restarts | In review |
+| PL-10 | Styled dialogs instead of the browser's popups | ✅ Done |
+| PL-11 | Rename saved documents | ✅ Done |
+| PL-12 | Persistent database: accounts and documents survive restarts | ✅ Done |
 
 ## License
 
