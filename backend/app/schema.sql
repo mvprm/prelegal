@@ -24,6 +24,7 @@ CREATE TABLE documents (
     user_id     INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     document_id TEXT    NOT NULL, -- the kind of document, an id from documents.json
     values_json TEXT    NOT NULL, -- the field values, a JSON object of strings
+    title       TEXT,             -- a name the user gave it, or NULL for the document's own name
     created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     updated_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );

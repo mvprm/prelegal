@@ -4,6 +4,9 @@ The browser saves the draft automatically as the user works on it. It picks each
 document's id (a UUID) when the draft starts, so `PUT /documents/{id}` both creates and
 updates it, and repeating a save is harmless. Drafts may be incomplete; only the document
 and its field names are checked. Another user's document answers 404, as if it did not exist.
+
+A document can also have a name of the user's own (`title`), set with `PATCH` alone, so an
+automatic save sent before a rename can never undo it.
 """
 
 import json
@@ -17,6 +20,9 @@ from .deps import CurrentUser, Db
 
 router = APIRouter()
 
+MAX_TITLE_LENGTH = 120
+"""The longest name a user can give a document (`MAX_TITLE_LENGTH` in saved.ts)."""
+
 
 class DocumentDraft(CamelModel):
     document_id: str
@@ -25,8 +31,15 @@ class DocumentDraft(CamelModel):
     """The field values; fields left out count as empty."""
 
 
+class DocumentTitle(CamelModel):
+    title: str
+    """The document's name; empty goes back to the name of its kind of document."""
+
+
 class SavedDocument(DocumentDraft):
     id: UUID
+    title: str | None
+    """The name the user gave it, if any."""
     created_at: str
     updated_at: str
 
@@ -75,6 +88,29 @@ def save_document(id: UUID, body: DocumentDraft, user: CurrentUser, db: Db, requ
     return _saved(row)
 
 
+@router.patch("/documents/{id}", responses=NOT_FOUND)
+def rename_document(id: UUID, body: DocumentTitle, user: CurrentUser, db: Db) -> SavedDocument:
+    """Gives the document a name of the user's own, or with an empty one, its default name back.
+
+    Renaming leaves `updatedAt` alone, so My documents keeps its order and when each draft was
+    last worked on.
+    """
+    title = body.title.strip()
+    # Checked here rather than by the model, so the message is one the browser can show.
+    if len(title) > MAX_TITLE_LENGTH:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT, f"The name can be at most {MAX_TITLE_LENGTH} characters long."
+        )
+    with db:
+        row = db.execute(
+            "UPDATE documents SET title = ? WHERE id = ? AND user_id = ? RETURNING *",
+            (title or None, str(id), user.id),
+        ).fetchone()
+    if row is None:
+        raise _not_found()
+    return _saved(row)
+
+
 @router.delete("/documents/{id}", status_code=status.HTTP_204_NO_CONTENT, responses=NOT_FOUND)
 def delete_document(id: UUID, user: CurrentUser, db: Db) -> None:
     """Deletes one of the user's documents for good."""
@@ -89,6 +125,7 @@ def _saved(row: sqlite3.Row) -> SavedDocument:
         id=row["id"],
         document_id=row["document_id"],
         values=json.loads(row["values_json"]),
+        title=row["title"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )

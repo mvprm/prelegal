@@ -34,7 +34,7 @@ export function setUnauthorizedHandler(handler: () => void) {
 }
 
 export interface RequestOptions {
-  method?: "GET" | "POST" | "PUT" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
   /** Lets the request finish after the page is closed (for a last save). */
   keepalive?: boolean;

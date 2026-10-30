@@ -8,9 +8,14 @@ export interface SavedDocument {
   /** The kind of document, an id from documents.json. */
   documentId: string;
   values: Values;
+  /** A name the user gave it, or null for the name of its kind of document. */
+  title: string | null;
   createdAt: string;
   updatedAt: string;
 }
+
+/** The longest name a document can have (`MAX_TITLE_LENGTH` in backend/app/api/documents.py). */
+export const MAX_TITLE_LENGTH = 120;
 
 /** A draft whose document has been chosen, so it can be saved. */
 export type ChosenDraft = Draft & { documentId: string };
@@ -34,6 +39,16 @@ export function saveDocument(
     body: { documentId: draft.documentId, values: draft.values },
     ...options,
   });
+}
+
+/** Gives the document a name of the user's own; an empty one goes back to the default name. */
+export function renameDocument(id: string, title: string, fetchImpl?: typeof fetch): Promise<SavedDocument> {
+  return apiRequest<SavedDocument>(`/documents/${encodeURIComponent(id)}`, { method: "PATCH", body: { title }, fetchImpl });
+}
+
+/** What to call a document: the name the user gave it, or else `defaultName` (its kind's). */
+export function documentName(title: string | null, defaultName: string): string {
+  return title || defaultName;
 }
 
 export function deleteDocument(id: string, fetchImpl?: typeof fetch): Promise<void> {

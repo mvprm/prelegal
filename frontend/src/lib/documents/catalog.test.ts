@@ -160,6 +160,17 @@ describe("pdfFileName", () => {
   it("leaves out companies that are not filled in yet", () => {
     expect(pdfFileName(nda, {})).toBe("Mutual-Non-Disclosure-Agreement.pdf");
   });
+
+  it("names the file after the name the user gave the document", () => {
+    const values = { [partyFieldId(1, "company")]: "Acme Inc" };
+    expect(pdfFileName(nda, values, "Q3 NDA / Globex")).toBe("Q3-NDA-Globex.pdf");
+    expect(pdfFileName(nda, values, "Contrato Rápido")).toBe("Contrato-Rapido.pdf");
+  });
+
+  it("keeps the usual name when the user's name has nothing a file name can keep", () => {
+    expect(pdfFileName(nda, {}, "保密协议")).toBe("Mutual-Non-Disclosure-Agreement.pdf");
+    expect(pdfFileName(nda, {}, null)).toBe("Mutual-Non-Disclosure-Agreement.pdf");
+  });
 });
 
 describe("findDocument", () => {

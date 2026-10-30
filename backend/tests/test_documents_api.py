@@ -28,6 +28,67 @@ def test_saving_creates_then_updates_a_document(user_client: TestClient) -> None
 
     assert user_client.get(f"/api/documents/{id}").json() == updated.json()
     assert user_client.get("/api/documents").json() == [updated.json()]
+    assert updated.json()["title"] is None
+
+
+def rename(client: TestClient, id: str, title: str) -> Any:
+    return client.patch(f"/api/documents/{id}", json={"title": title})
+
+
+def test_renaming_a_document(user_client: TestClient) -> None:
+    id = str(uuid4())
+    saved = save(user_client, id).json()
+
+    renamed = rename(user_client, id, "  Acme NDA  ")
+
+    assert renamed.status_code == 200
+    assert renamed.json() == saved | {"title": "Acme NDA"}  # trimmed, and not counted as an update
+    assert user_client.get(f"/api/documents/{id}").json()["title"] == "Acme NDA"
+    assert user_client.get("/api/documents").json()[0]["title"] == "Acme NDA"
+
+
+@pytest.mark.parametrize("title", ["", "   "])
+def test_an_empty_name_goes_back_to_the_default(user_client: TestClient, title: str) -> None:
+    id = str(uuid4())
+    save(user_client, id)
+    rename(user_client, id, "Acme NDA")
+
+    assert rename(user_client, id, title).json()["title"] is None
+
+
+def test_saving_keeps_the_name(user_client: TestClient) -> None:
+    # The browser saves automatically, so a save sent before a rename may arrive after it.
+    id = str(uuid4())
+    save(user_client, id)
+    rename(user_client, id, "Acme NDA")
+
+    response = save(user_client, id, **(NDA_VALUES | {"party2.company": "Globex LLC"}))
+
+    assert response.json()["title"] == "Acme NDA"
+    assert response.json()["values"]["party2.company"] == "Globex LLC"
+
+
+def test_names_are_at_most_120_characters(user_client: TestClient) -> None:
+    id = str(uuid4())
+    save(user_client, id)
+
+    too_long = rename(user_client, id, "x" * 121)
+    assert too_long.status_code == 422
+    assert too_long.json() == {"detail": "The name can be at most 120 characters long."}
+    assert rename(user_client, id, f" {'x' * 120} ").json()["title"] == "x" * 120
+
+
+@pytest.mark.parametrize("body", [{}, {"title": None}, {"title": 5}])
+def test_renaming_validates_the_request(user_client: TestClient, body: dict[str, Any]) -> None:
+    id = str(uuid4())
+    save(user_client, id)
+    assert user_client.patch(f"/api/documents/{id}", json=body).status_code == 422
+
+
+def test_renaming_a_missing_document(user_client: TestClient) -> None:
+    response = rename(user_client, str(uuid4()), "Acme NDA")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Document not found"}
 
 
 def test_saving_fills_in_missing_fields_as_empty(user_client: TestClient) -> None:
@@ -73,11 +134,13 @@ def test_users_cannot_see_or_change_each_others_documents(user_client: TestClien
     for response in [
         other_client.get(f"/api/documents/{id}"),
         save(other_client, id, **{"purpose": "Taken over"}),
+        rename(other_client, id, "Taken over"),
         other_client.delete(f"/api/documents/{id}"),
     ]:
         assert response.status_code == 404
         assert response.json() == {"detail": "Document not found"}
     assert user_client.get(f"/api/documents/{id}").json()["values"] == NDA_VALUES
+    assert user_client.get(f"/api/documents/{id}").json()["title"] is None
 
 
 @pytest.mark.parametrize(
@@ -115,8 +178,14 @@ def test_ids_must_be_uuids(user_client: TestClient) -> None:
 
 @pytest.mark.parametrize(
     ("method", "path"),
-    [("GET", "/api/documents"), ("GET", f"/api/documents/{uuid4()}"), ("PUT", f"/api/documents/{uuid4()}"), ("DELETE", f"/api/documents/{uuid4()}")],
+    [
+        ("GET", "/api/documents"),
+        ("GET", f"/api/documents/{uuid4()}"),
+        ("PUT", f"/api/documents/{uuid4()}"),
+        ("PATCH", f"/api/documents/{uuid4()}"),
+        ("DELETE", f"/api/documents/{uuid4()}"),
+    ],
 )
 def test_documents_need_a_signed_in_user(client: TestClient, method: str, path: str) -> None:
-    response = client.request(method, path, json={"documentId": "mutual-nda", "values": {}})
+    response = client.request(method, path, json={"documentId": "mutual-nda", "values": {}, "title": "Acme NDA"})
     assert response.status_code == 401

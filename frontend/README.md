@@ -3,7 +3,9 @@
 Next.js app for Prelegal. Every page except **Sign in** (`/signin`) and **Sign up**
 (`/signup`) needs an account:
 
-- **My documents** (`/`) lists the user's saved documents, to open, download as a PDF or delete.
+- **My documents** (`/`) lists the user's saved documents, to open, download as a PDF,
+  rename or delete. A document is called after its kind until the user renames it; its name
+  also heads the draft page and names the PDF.
 - **Draft an agreement** (`/draft/?id=…`): the user chats with an AI assistant (or edits the
   fields in a form), which picks one of the 11 supported Common Paper agreements and fills it
   in, and sees the document update as they go. The draft is saved to their account
@@ -77,7 +79,8 @@ as described in `../backend/README.md`) or with Docker.
   footer in `src/components/AppShell.tsx`.
 - **Dialogs** use `Modal` (`src/components/Modal.tsx`), on the browser's own `<dialog>`, which
   keeps focus inside and the page behind inert; `ConfirmDialog` asks before an action such as
-  deleting (with the red `destructiveButton`, the one colour outside the brand palette). The app never uses the browser's `confirm`, `alert` or `prompt` boxes.
+  deleting (with the red `destructiveButton`, the one colour outside the brand palette), and
+  `RenameDialog` asks for a document's name; both run their action through `useDialogAction`. The app never uses the browser's `confirm`, `alert` or `prompt` boxes.
 
 **Tests** run in Node. Component tests (`*.test.tsx`) start with `// @vitest-environment jsdom`
 and use Testing Library; `vitest.setup.ts` fills in what jsdom lacks, such as `showModal()`.
