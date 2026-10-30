@@ -29,7 +29,7 @@ There is an OPENROUTER_API_KEY in the .env file in the project root.
 The entire project should be packaged into a Docker container.  
 The backend should be in backend/ and be a uv project, using FastAPI.  
 The frontend should be in frontend/  
-The database should use SQLite and be created from scratch each time the Docker container is brought up, allowing for a users table with sign up and sign in.  
+The database should use SQLite, kept in a Docker volume so accounts and documents persist across restarts, with its schema built by numbered migrations; it holds a users table with sign up and sign in.  
 The frontend is statically built (Next.js `output: "export"`) and served by FastAPI.  
 There should be scripts in scripts/ for:  
 ```bash
@@ -73,8 +73,8 @@ Jira project **PL**. Branches are `feature/PL-N-slug`, merged into `main` with `
 - Tests: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run build` in `frontend/`.
 
 ### PL-4: V1 foundation (done)
-- **Backend** (`backend/`, uv, Python 3.13): `app/main.py` `create_app()` resets the DB on startup, mounts the API sub-app at `/api` (docs at `/api/docs`) and the static frontend at `/`. Add endpoints as routers in `app/api/`. Settings: `PRELEGAL_DB_PATH`, `PRELEGAL_STATIC_DIR`, `PRELEGAL_DOCUMENTS_PATH`, `PRELEGAL_SECURE_COOKIES`. Tests: `uv run pytest` (real temp SQLite; only the LLM is stubbed).
-- **Database**: SQLite, schema in `app/schema.sql` (`users`, `sessions`, `documents` since PL-7); no migrations, since the DB is recreated every start.
+- **Backend** (`backend/`, uv, Python 3.13): `app/main.py` `create_app()` migrates the DB on startup (see PL-12), mounts the API sub-app at `/api` (docs at `/api/docs`) and the static frontend at `/`. Add endpoints as routers in `app/api/`. Settings: `PRELEGAL_DB_PATH`, `PRELEGAL_RESET_DB` (PL-12), `PRELEGAL_STATIC_DIR`, `PRELEGAL_DOCUMENTS_PATH`, `PRELEGAL_SECURE_COOKIES`. Tests: `uv run pytest` (real temp SQLite; only the LLM is stubbed).
+- **Database**: SQLite (`users`, `sessions`, `documents` since PL-7). Recreated on every start until PL-12, which made it persistent with migrations.
 - **Auth**: placeholder in PL-4, real since PL-7 (below).
 - **Frontend**: switched to a static export (`output: "export"`, `trailingSlash: true`), so no route handlers, server actions, rewrites or `cacheComponents`. Restyled with the brand palette; dark mode removed.
 - **Docker + scripts**: multi-stage `Dockerfile` (Node build, then Python runtime as non-root with a health check on `/api/health`). DB at `/data/prelegal.db` in the container. Start/stop scripts in `scripts/`.
@@ -116,3 +116,8 @@ Jira project **PL**. Branches are `feature/PL-N-slug`, merged into `main` with `
 ### PL-11: Rename documents (in review)
 - `documents.title` (NULL = called after its kind of document). `PATCH /api/documents/{id}` `{title}` sets it (trimmed, max 120, empty = NULL, readable 422; `updated_at` unchanged); the autosave `PUT` never touches it. `MAX_TITLE_LENGTH` is in both `api/documents.py` and `saved.ts`.
 - Frontend: `documentName(title, defaultName)` in `saved.ts` is the one display name. My documents: Rename opens `RenameDialog` (on `Modal`; `useDialogAction` in `Modal.tsx` is the pending/error cycle shared with `ConfirmDialog`). The title is kept out of `Draft` (chat and autosave): `DraftWorkspace` passes it to `DraftCreator`'s heading and to `downloadDocumentPdf` (PDF title; `pdfFileName(spec, values, title)`).
+
+### PL-12: Persistent database (in review)
+- The DB lives in the `prelegal-data` Docker volume at `/data` (start scripts `-v prelegal-data:/data`; stop keeps it; `docker volume rm prelegal-data` deletes it). `PRELEGAL_RESET_DB=true` deletes it on every start instead.
+- Schema = numbered migrations `backend/app/migrations/NNNN_name.sql` (0001 = the former `schema.sql`, with `documents.title`). `db.migrate_database()` applies the new ones at startup, each in a `BEGIN IMMEDIATE` transaction (statements run one by one, since `executescript()` commits), recording the count in `PRAGMA user_version`. To change the schema, add the next file; never edit a released one. It refuses a DB newer than the code, numbering gaps, and a pre-PL-12 DB (tables at version 0).
+- WAL journal mode (set once, stored in the file); expired sessions are deleted at startup (`accounts.delete_expired_sessions`).

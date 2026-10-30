@@ -1,5 +1,5 @@
--- The whole database schema. The database is recreated from this file every time the
--- app starts, so there are no migrations: change the schema by editing this file.
+-- The database as of PL-12: accounts, their sessions and their saved documents.
+-- Applied migrations never change: change the schema by adding the next numbered file.
 -- Times are ISO 8601 UTC text (e.g. 2026-10-28T14:03:00.000Z), so they compare as text.
 
 CREATE TABLE users (
