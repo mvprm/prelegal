@@ -28,3 +28,17 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+/* Modal dialogs (components/Modal.tsx) and their dimmed backdrop fade in as they open. */
+@media (prefers-reduced-motion: no-preference) {
+  dialog[open],
+  dialog[open]::backdrop {
+    animation: modal-in 150ms ease-out;
+  }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+  }
+}

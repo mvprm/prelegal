@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ApiError, GENERIC_ERROR } from "@/lib/api";
+import { errorMessage } from "@/lib/api";
 import { findDocument, missingFields, type DocumentSpec } from "@/lib/documents/catalog";
 import { deleteDocument, listDocuments, partiesLabel, type SavedDocument } from "@/lib/documents/saved";
+import { ConfirmDialog } from "../Modal";
 import { ErrorMessage, PageLoading, primaryButton, secondaryButton } from "../ui";
 import { downloadDocumentPdf } from "./download";
 
@@ -19,31 +20,28 @@ type Listing = { status: "loading" } | { status: "ready"; documents: SavedDocume
 export function MyDocuments({ catalog, templates }: MyDocumentsProps) {
   const [listing, setListing] = useState<Listing>({ status: "loading" });
   const [error, setError] = useState<string | null>(null);
+  /** The document the user asked to delete, until they confirm or cancel. */
+  const [toDelete, setToDelete] = useState<{ document: SavedDocument; title: string } | null>(null);
 
   useEffect(() => {
     let current = true;
     listDocuments().then(
       (documents) => current && setListing({ status: "ready", documents }),
-      (e) => current && setListing({ status: "failed", message: messageOf(e) }),
+      (e) => current && setListing({ status: "failed", message: errorMessage(e) }),
     );
     return () => {
       current = false;
     };
   }, []);
 
-  async function remove(document: SavedDocument, title: string) {
-    if (!window.confirm(`Delete “${title}”? This cannot be undone.`)) return;
-    setError(null);
-    try {
-      await deleteDocument(document.id);
-      setListing((listing) =>
-        listing.status === "ready"
-          ? { status: "ready", documents: listing.documents.filter(({ id }) => id !== document.id) }
-          : listing,
-      );
-    } catch (e) {
-      setError(`“${title}” could not be deleted. ${messageOf(e)}`);
-    }
+  /** Deletes the document once confirmed. A failure is shown in the dialog, which stays open. */
+  async function remove(document: SavedDocument) {
+    await deleteDocument(document.id);
+    setListing((listing) =>
+      listing.status === "ready"
+        ? { status: "ready", documents: listing.documents.filter(({ id }) => id !== document.id) }
+        : listing,
+    );
   }
 
   return (
@@ -74,12 +72,25 @@ export function MyDocuments({ catalog, templates }: MyDocumentsProps) {
                 document={document}
                 spec={findDocument(catalog, document.documentId)}
                 templates={templates}
-                onDelete={remove}
+                onDelete={(document, title) => setToDelete({ document, title })}
                 onError={setError}
               />
             ))}
           </ul>
         ))}
+
+      <ConfirmDialog
+        open={toDelete !== null}
+        title={toDelete ? `Delete “${toDelete.title}”?` : ""}
+        description="It will be removed from My documents for good. This cannot be undone."
+        confirmLabel="Delete"
+        pendingLabel="Deleting…"
+        destructive
+        onConfirm={async () => {
+          if (toDelete) await remove(toDelete.document);
+        }}
+        onClose={() => setToDelete(null)}
+      />
     </main>
   );
 }
@@ -179,10 +190,6 @@ function EmptyState() {
       </Link>
     </div>
   );
-}
-
-function messageOf(e: unknown): string {
-  return e instanceof ApiError ? e.message : GENERIC_ERROR;
 }
 
 /** e.g. "28 Oct 2026, 14:03", in the user's locale and time zone. */

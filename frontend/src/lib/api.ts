@@ -18,6 +18,11 @@ export class ApiError extends Error {
 export const GENERIC_ERROR = "Sorry, something went wrong. Please try again.";
 export const NETWORK_ERROR = "Could not reach Prelegal. Check your connection and try again.";
 
+/** What to tell the user about a failed request: the API's message, or a generic one. */
+export function errorMessage(e: unknown): string {
+  return e instanceof ApiError ? e.message : GENERIC_ERROR;
+}
+
 let onUnauthorized: () => void = () => {};
 
 /**

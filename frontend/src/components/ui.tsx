@@ -5,6 +5,12 @@ export const primaryButton =
   "text-white shadow-sm transition-colors hover:bg-brand-purple/90 focus-visible:outline-2 " +
   "focus-visible:outline-offset-2 focus-visible:outline-brand-purple disabled:cursor-not-allowed disabled:bg-neutral-400";
 
+/** Like `primaryButton`, in red, for actions that cannot be undone (e.g. deleting). */
+export const destructiveButton =
+  "inline-flex items-center justify-center gap-2 rounded-md bg-red-700 px-4 py-2 text-sm font-semibold " +
+  "text-white shadow-sm transition-colors hover:bg-red-800 focus-visible:outline-2 " +
+  "focus-visible:outline-offset-2 focus-visible:outline-red-700 disabled:cursor-not-allowed disabled:bg-neutral-400";
+
 export const secondaryButton =
   "inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-3 py-1.5 " +
   "text-sm font-medium text-brand-navy shadow-xs transition-colors hover:bg-neutral-50 " +

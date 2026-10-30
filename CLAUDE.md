@@ -108,3 +108,7 @@ Jira project **PL**. Branches are `feature/PL-N-slug`, merged into `main` with `
 - On those turns the model sees an empty draft: the defaulted fields are only named in the progress section, and `apply_updates` keeps the defaults wherever it sets nothing. Defaults shown as current values, or their text shown anywhere in the prompt, made the model keep them (tested against the real model; it took all three of these changes). The `JUST_CHOSEN` reminder says that the user's reason for the agreement is a value (e.g. the Purpose).
 - The NDA `purpose` description in `documents.json` now says what the field is for ("Why the parties are sharing confidential information…"); it is also the form's hint, so keep it user-facing.
 - Live tests in `tests/test_chat_live.py` cover the ticket's example message and keeping a default the user wants.
+
+### PL-10: Styled modals (in review)
+- `src/components/Modal.tsx`: `Modal` (controlled `open`/`onClose` on a native `<dialog>` with `showModal()`; content rendered only while open; Esc and backdrop clicks ask the parent to close; `dismissible={false}` while busy; focuses `[data-autofocus]`) and `ConfirmDialog` (async `onConfirm`; a failure stays in the dialog to retry; `destructive` = red `destructiveButton` from `ui.tsx` and Cancel focused). No `window.confirm`/`alert`/`prompt` in the app.
+- Component tests: `*.test.tsx` with `// @vitest-environment jsdom` and Testing Library; `vitest.setup.ts` stubs jsdom's missing `showModal()`/`close()` and runs Testing Library's cleanup. Esc is simulated with a `cancel` event.
