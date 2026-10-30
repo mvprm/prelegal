@@ -128,6 +128,7 @@ Work is tracked in Jira (project **PL**).
 | PL-6 | All 11 agreement types via AI chat, with help choosing the right one | ✅ Done |
 | PL-7 | Accounts, saved documents, a professional look and the draft disclaimer | ✅ Done |
 | PL-8 | Bug fixes: choose the agreement from a list; reopening a saved document | ✅ Done |
+| PL-9 | Bug fix: the AI keeps what the user said in their first message over the defaults | ✅ Done |
 
 ## License
 

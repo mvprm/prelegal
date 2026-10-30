@@ -13,7 +13,7 @@
         "type": "longtext",
         "required": true,
         "default": "Evaluating whether to enter into a business relationship with the other party.",
-        "description": "How Confidential Information may be used"
+        "description": "Why the parties are sharing confidential information, e.g. to discuss a possible joint venture; it may only be used for this."
       },
       {
         "id": "effectiveDate",

@@ -91,8 +91,11 @@ Each turn is one or two Structured Outputs calls (`Assistant.respond` in `app/ch
    Prelegal cannot draft and offers the closest supported document.
 2. Once there is a document, the schema is built from its fields: `{reply, question, updates,
    switchTo}`, where every field in `updates` is null unless the user gave or changed it. On
-   the turn a document is chosen (or switched to with `switchTo`), the LLM is told to capture
-   everything said so far in the conversation.
+   the turn a document is chosen (by the AI, with a card in the browser, or with `switchTo`),
+   the LLM is told to capture everything said so far in the conversation. Any draft that holds
+   nothing but its defaults counts as just chosen. The LLM then sees it empty, with the
+   defaulted fields only named: shown defaults read as answers, so it kept them over what the
+   user said. The defaults stay wherever it sets nothing.
 
 The backend merges the non-null updates, so the model can never erase what the user already
 entered, and drops values the fields would reject (such as a malformed date), because the

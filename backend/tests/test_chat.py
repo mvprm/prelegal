@@ -104,17 +104,62 @@ class TestChoosingADocument:
         reminder = fake.calls[1][0][-1]
         assert reminder["role"] == "system"
         assert reminder["content"].startswith("The user has just chosen the Mutual Non-Disclosure Agreement.")
+        assert "why they need the agreement" in reminder["content"]
+
+    def test_hides_the_defaults_of_a_document_just_chosen(
+        self, assistant: Assistant, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        fake = use(monkeypatch, FakeLlm(selection("mutual-nda"), turn("mutual-nda", purpose="Evaluating a partnership")))
+
+        result = assistant.respond(HISTORY, None, {}, TODAY)
+
+        # The model's values replace the defaults, which stay everywhere else.
+        assert result.values == NDA.default_values(TODAY) | {"purpose": "Evaluating a partnership"}
+        # The model sees an empty draft: the defaulted fields are named, but not their values.
+        prompt = fake.system_prompt(1)
+        assert NDA.default_values(TODAY)["purpose"] not in prompt
+        assert "Current values (JSON; fields not listed are empty):\n{}" in prompt
+        assert "Still missing (required): Purpose, Effective Date," in prompt
+        assert "Fields with a default, kept wherever `updates` is null" in prompt
+        assert "when the user wants its default): Purpose, Effective Date," in prompt
+
+    def test_a_document_chosen_with_a_card_is_just_chosen(
+        self, assistant: Assistant, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # The browser sets the card's document with its defaults and sends "I'd like to draft a
+        # ...", so details from the chat before it are captured as if the AI had chosen it.
+        fake = use(monkeypatch, FakeLlm(turn("mutual-nda", purpose="Evaluating a partnership")))
+
+        result = assistant.respond(HISTORY, "mutual-nda", NDA.default_values(TODAY), TODAY)
+
+        assert result.values["purpose"] == "Evaluating a partnership"
+        assert len(fake.calls) == 1
+        assert NDA.default_values(TODAY)["purpose"] not in fake.system_prompt(0)
+        assert fake.calls[0][0][-1]["content"].startswith("The user has just chosen the Mutual Non-Disclosure Agreement.")
+
+    def test_names_no_defaults_for_a_document_without_any(
+        self, assistant: Assistant, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        assert not any(CATALOG.documents["service-level-agreement"].default_values(TODAY).values())
+        fake = use(monkeypatch, FakeLlm(selection("service-level-agreement"), turn("service-level-agreement")))
+        assistant.respond(HISTORY, None, {}, TODAY)
+        assert "Fields with a default" not in fake.system_prompt(1)
 
 
 class TestDraftingADocument:
     def test_fills_in_the_updates(self, assistant: Assistant, monkeypatch: pytest.MonkeyPatch) -> None:
         fake = use(monkeypatch, FakeLlm(turn("mutual-nda", governingLaw="California", mndaTermYears=2)))
-        values = NDA.default_values(TODAY)
+        # Something filled in besides the defaults: a draft in progress, not one just chosen.
+        values = NDA.default_values(TODAY) | {"party1.company": "Acme Inc."}
 
         result = assistant.respond(HISTORY, "mutual-nda", values, TODAY)
 
         assert result.values == values | {"governingLaw": "California", "mndaTermYears": "2"}
         assert "latest message" in fake.system_prompt(0)
+        # It shows its values, defaults included, and has no reminder after the conversation.
+        assert NDA.default_values(TODAY)["purpose"] in fake.system_prompt(0)
+        assert "Fields with a default" not in fake.system_prompt(0)
+        assert fake.calls[0][0][-1] == HISTORY[-1]
 
     def test_switches_to_another_document_when_asked(self, assistant: Assistant, monkeypatch: pytest.MonkeyPatch) -> None:
         fake = use(

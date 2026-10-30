@@ -82,16 +82,19 @@ class Assistant:
         Raises `InvalidDraftError` if `document_id` or the keys of `values` are unknown.
         """
         spec = self.catalog.require(document_id) if document_id is not None else None
-        just_chosen = False
         if spec is None:
             pick = llm.structured_completion(_selection_messages(self.catalog, history), self.selection_model)
             spec = self.catalog.get(pick.document_id)
             if spec is None:
                 return ChatResult(_message(pick.reply, pick.question, "What would you like to draft?"), None, {})
-            values, just_chosen = spec.default_values(today), True
+            values = spec.default_values(today)
         else:
             values = spec.complete_values(values)
 
+        # A draft with nothing but its defaults counts as just chosen, whether the AI chose it
+        # above or the user picked a card in the browser: details from the conversation so far
+        # are still to be captured. It stays so until something is filled in.
+        just_chosen = values == spec.default_values(today)
         turn = self._document_turn(spec, history, values, today, just_chosen)
         switch = self.catalog.get(turn.switch_to)
         if switch is not None and switch.id != spec.id:
@@ -281,8 +284,10 @@ CAPTURE_ALL = (
 )
 JUST_CHOSEN = (
     "The user has just chosen the {name}. Before asking anything, put in `updates` every detail "
-    "they already gave in the conversation above (company names, people, places, dates, terms), "
-    "then ask about what is still missing."
+    "they already gave in the conversation above (company names, people and their titles, notice "
+    "addresses, places, dates, terms), then ask about what is still missing. If they said why they "
+    "need the agreement, that reason is a value too: record it in the field it belongs to, such "
+    "as a purpose."
 )
 
 
@@ -299,16 +304,26 @@ def _document_messages(
     today: date,
     just_chosen: bool,
 ) -> list[Message]:
-    missing = spec.missing_fields(values)
+    # Defaults the model can see read as answers the user already gave, so it kept them over what
+    # the user said (even with the default text shown apart). A just-chosen draft is shown empty,
+    # its defaulted fields only named; `respond` keeps the defaults wherever the model sets nothing.
+    shown = {} if just_chosen else values
+    missing = spec.missing_fields(shown)
     optional = [
         field.label
         for field in spec.fields
-        if not field.required and field.is_active(values) and not values.get(field.id, "").strip()
+        if not field.required and field.is_active(values) and not shown.get(field.id, "").strip()
     ]
     progress = (
         f"Still missing (required): {', '.join(missing) if missing else 'nothing, the document is complete'}.\n"
         f"Optional fields not filled in: {', '.join(optional) if optional else 'none'}."
     )
+    defaulted = [spec.all_fields[key].label for key, value in values.items() if value] if just_chosen else []
+    if defaulted:
+        progress += (
+            f"\nFields with a default, kept wherever `updates` is null (so leave a field null when the "
+            f"user wants its default): {', '.join(defaulted)}."
+        )
     system = DOCUMENT_PROMPT.format(
         name=spec.name,
         description=spec.description,
@@ -325,7 +340,7 @@ def _document_messages(
             for field in spec.all_fields.values()
             if field.is_active(values)
         ),
-        values=json.dumps({key: value for key, value in values.items() if value}, indent=2),
+        values=json.dumps({key: value for key, value in shown.items() if value}, indent=2),
     )
     messages = [{"role": "system", "content": system}, *history]
     if just_chosen:
