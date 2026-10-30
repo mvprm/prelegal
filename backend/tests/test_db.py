@@ -26,7 +26,7 @@ def table_names(path: Path) -> set[str]:
     [
         ("users", ["id", "email", "password_hash", "created_at"]),
         ("sessions", ["token_hash", "user_id", "expires_at"]),
-        ("documents", ["id", "user_id", "document_id", "values_json", "created_at", "updated_at"]),
+        ("documents", ["id", "user_id", "document_id", "values_json", "title", "created_at", "updated_at"]),
     ],
 )
 def test_creates_the_tables(tmp_path: Path, table: str, columns: list[str]) -> None:

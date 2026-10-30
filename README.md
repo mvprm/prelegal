@@ -23,7 +23,7 @@ agreement as you talk. Then download it as a PDF, ready for legal review. Built 
 - **Guided drafting:** the assistant asks about the parties and the terms one step at a time,
   and the live preview updates as you answer. You can also edit any field in a form.
 - **Your documents, saved:** sign up to get your own space. Drafts are saved automatically,
-  and **My documents** lets you reopen, download or delete them.
+  and **My documents** lets you reopen, download, rename or delete them.
 - **PDF export:** the cover page and Standard Terms are generated in the browser.
 - **Draft disclaimer:** every document, on screen and in the PDF, is marked as a draft for
   review by a qualified lawyer.
@@ -130,6 +130,7 @@ Work is tracked in Jira (project **PL**).
 | PL-8 | Bug fixes: choose the agreement from a list; reopening a saved document | ✅ Done |
 | PL-9 | Bug fix: the AI keeps what the user said in their first message over the defaults | ✅ Done |
 | PL-10 | Styled dialogs instead of the browser's popups | In review |
+| PL-11 | Rename saved documents | In review |
 
 ## License
 

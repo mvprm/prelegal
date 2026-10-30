@@ -1,12 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
 import { jsonResponse } from "../testing";
-import { deleteDocument, getDocument, listDocuments, newDocumentId, partiesLabel, saveDocument } from "./saved";
+import {
+  deleteDocument,
+  documentName,
+  getDocument,
+  listDocuments,
+  newDocumentId,
+  partiesLabel,
+  renameDocument,
+  saveDocument,
+} from "./saved";
 
 const ID = "3f2c5a9e-8d4b-4c1a-9e7f-0a1b2c3d4e5f";
 const saved = {
   id: ID,
   documentId: "mutual-nda",
   values: { purpose: "Evaluation" },
+  title: null,
   createdAt: "2026-10-28T10:00:00.000Z",
   updatedAt: "2026-10-28T10:05:00.000Z",
 };
@@ -28,6 +38,17 @@ describe("saved document requests", () => {
     expect(url).toBe(`/api/documents/${ID}`);
     expect(init).toMatchObject({ method: "PUT", keepalive: true });
     expect(JSON.parse(init?.body as string)).toEqual({ documentId: "mutual-nda", values: { purpose: "Evaluation" } });
+  });
+
+  it("renames a document with PATCH, sending only the name", async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async () => jsonResponse(200, { ...saved, title: "Q3 NDA" }));
+
+    expect(await renameDocument(ID, "Q3 NDA", fetchImpl)).toEqual({ ...saved, title: "Q3 NDA" });
+
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe(`/api/documents/${ID}`);
+    expect(init?.method).toBe("PATCH");
+    expect(JSON.parse(init?.body as string)).toEqual({ title: "Q3 NDA" });
   });
 
   it("deletes a document", async () => {
@@ -54,6 +75,13 @@ describe("newDocumentId", () => {
   it("sets the version and variant bits whatever the random bytes", () => {
     expect(newDocumentId((bytes) => bytes.fill(0xff))).toBe("ffffffff-ffff-4fff-bfff-ffffffffffff");
     expect(newDocumentId((bytes) => bytes.fill(0))).toBe("00000000-0000-4000-8000-000000000000");
+  });
+});
+
+describe("documentName", () => {
+  it("is the name the user gave the document, or else the default", () => {
+    expect(documentName("Q3 NDA", "Mutual Non-Disclosure Agreement")).toBe("Q3 NDA");
+    expect(documentName(null, "Mutual Non-Disclosure Agreement")).toBe("Mutual Non-Disclosure Agreement");
   });
 });
 

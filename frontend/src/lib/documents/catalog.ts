@@ -151,9 +151,23 @@ export function formatDate(isoDate: string): string {
   });
 }
 
-/** e.g. "Cloud-Service-Agreement-Acme-Inc-Globex-LLC.pdf"; company names are dropped while empty. */
-export function pdfFileName(spec: DocumentSpec, values: Values): string {
-  const slug = (text: string) => text.trim().replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+/**
+ * e.g. "Cloud-Service-Agreement-Acme-Inc-Globex-LLC.pdf"; company names are dropped while
+ * empty. A document the user named is saved under that name alone, e.g. "Acme-NDA.pdf",
+ * unless it has no letters or digits a file name can keep.
+ */
+export function pdfFileName(spec: DocumentSpec, values: Values, title?: string | null): string {
+  const named = slug(title ?? "");
+  if (named) return `${named}.pdf`;
   const companies = [1, 2].map((party) => slug(values[partyFieldId(party as 1 | 2, "company")] ?? ""));
   return [slug(spec.name), ...companies].filter(Boolean).join("-") + ".pdf";
+}
+
+/** "Contrato Rápido / 2026" becomes "Contrato-Rapido-2026": ASCII letters and digits only. */
+function slug(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // accents, which NFD split off their letters
+    .replace(/[^A-Za-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }

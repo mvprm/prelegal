@@ -62,12 +62,18 @@ valid session (`get_current_user` in `app/api/deps.py`).
 | `GET /api/documents` | The user's documents, most recently updated first |
 | `GET /api/documents/{id}` | One document |
 | `PUT /api/documents/{id}` | `{documentId, values}`: creates the document or replaces its contents |
+| `PATCH /api/documents/{id}` | `{title}`: renames it; an empty title goes back to the default name |
 | `DELETE /api/documents/{id}` | Deletes it (`204`) |
 
 The browser picks each document's id (a UUID) when the draft starts and saves it with `PUT`
 as the user works, so saving the same draft twice is harmless. Drafts may be incomplete: a
 save checks only that the document exists and has those fields (`422` otherwise), and fills
 in missing fields as empty. Another user's document answers `404`, exactly like a missing one.
+
+Every document has a `title`: null until the user names it, when it is called after its kind
+of document. Only `PATCH` changes it, so an automatic save sent before a rename can't undo
+it. The title is trimmed and at most 120 characters (`422` with a readable message
+otherwise). Renaming does not change `updatedAt`, so the list keeps its order.
 
 ## Documents
 

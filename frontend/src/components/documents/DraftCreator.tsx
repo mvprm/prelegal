@@ -5,6 +5,7 @@ import { defaultValues, findDocument, missingFields, type DocumentSpec } from "@
 import { GREETING, type ChatMessage, type Draft } from "@/lib/documents/chat";
 import { buildCoverPage } from "@/lib/documents/coverPage";
 import { parseDocument } from "@/lib/documents/document";
+import { documentName } from "@/lib/documents/saved";
 import { DRAFT_DISCLAIMER } from "@/lib/legal";
 import { primaryButton } from "../ui";
 import { Chat } from "./Chat";
@@ -22,6 +23,8 @@ interface DraftCreatorProps {
   id: string;
   /** The draft as saved, when reopening a document; otherwise an empty draft. */
   initialDraft: Draft;
+  /** The name the user gave the document on My documents, if any. */
+  title: string | null;
 }
 
 /**
@@ -29,7 +32,7 @@ interface DraftCreatorProps {
  * The assistant picks the document from the conversation; until then there is no preview.
  * From then on every change is saved to the user's account.
  */
-export function DraftCreator({ catalog, templates, id, initialDraft }: DraftCreatorProps) {
+export function DraftCreator({ catalog, templates, id, initialDraft, title }: DraftCreatorProps) {
   const today = useToday();
   const [draft, setDraft] = useState<Draft>(initialDraft);
   const spec = findDocument(catalog, draft.documentId);
@@ -70,7 +73,7 @@ export function DraftCreator({ catalog, templates, id, initialDraft }: DraftCrea
       </section>
 
       {spec ? (
-        <Preview spec={spec} draft={draft} templates={templates} autosave={autosave} />
+        <Preview spec={spec} title={title} draft={draft} templates={templates} autosave={autosave} />
       ) : (
         <Placeholder catalog={catalog} onChoose={chooseDocument} disabled={today === "" || chat.pending} />
       )}
@@ -89,11 +92,13 @@ function greetingFor(spec: DocumentSpec | null): ChatMessage {
 
 function Preview({
   spec,
+  title,
   draft,
   templates,
   autosave,
 }: {
   spec: DocumentSpec;
+  title: string | null;
   draft: Draft;
   templates: Record<string, string>;
   autosave: AutosaveState;
@@ -112,7 +117,7 @@ function Preview({
     setDownloading(true);
     setError(null);
     try {
-      await downloadDocumentPdf(spec, draft.values, templates);
+      await downloadDocumentPdf(spec, draft.values, templates, title);
     } catch (e) {
       console.error(e);
       setError("Sorry, the PDF could not be created. Please try again.");
@@ -126,8 +131,9 @@ function Preview({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h2 id="preview-heading" className="text-base font-semibold text-brand-navy">
-            {spec.name}
+            {documentName(title, spec.name)}
           </h2>
+          {title && <span className="text-sm text-brand-gray">{spec.name}</span>}
           <SaveIndicator autosave={autosave} />
         </div>
         <button type="button" onClick={handleDownload} disabled={missing.length > 0 || downloading} className={primaryButton}>

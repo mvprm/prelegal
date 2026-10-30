@@ -4,10 +4,18 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { errorMessage } from "@/lib/api";
 import { findDocument, missingFields, type DocumentSpec } from "@/lib/documents/catalog";
-import { deleteDocument, listDocuments, partiesLabel, type SavedDocument } from "@/lib/documents/saved";
+import {
+  deleteDocument,
+  documentName,
+  listDocuments,
+  partiesLabel,
+  renameDocument,
+  type SavedDocument,
+} from "@/lib/documents/saved";
 import { ConfirmDialog } from "../Modal";
 import { ErrorMessage, PageLoading, primaryButton, secondaryButton } from "../ui";
 import { downloadDocumentPdf } from "./download";
+import { RenameDialog } from "./RenameDialog";
 
 interface MyDocumentsProps {
   catalog: DocumentSpec[];
@@ -16,12 +24,12 @@ interface MyDocumentsProps {
 
 type Listing = { status: "loading" } | { status: "ready"; documents: SavedDocument[] } | { status: "failed"; message: string };
 
-/** The signed-in user's saved documents, to open, download or delete. */
+/** The signed-in user's saved documents, to open, download, rename or delete. */
 export function MyDocuments({ catalog, templates }: MyDocumentsProps) {
   const [listing, setListing] = useState<Listing>({ status: "loading" });
   const [error, setError] = useState<string | null>(null);
-  /** The document the user asked to delete, until they confirm or cancel. */
-  const [toDelete, setToDelete] = useState<{ document: SavedDocument; title: string } | null>(null);
+  /** The document the user asked to rename or delete, while that dialog is open. */
+  const [selected, setSelected] = useState<Selection | null>(null);
 
   useEffect(() => {
     let current = true;
@@ -34,15 +42,23 @@ export function MyDocuments({ catalog, templates }: MyDocumentsProps) {
     };
   }, []);
 
-  /** Deletes the document once confirmed. A failure is shown in the dialog, which stays open. */
+  function changeDocuments(change: (documents: SavedDocument[]) => SavedDocument[]) {
+    setListing((listing) => (listing.status === "ready" ? { status: "ready", documents: change(listing.documents) } : listing));
+  }
+
+  // Both run from their dialog, which shows a failure and stays open.
+  async function rename(document: SavedDocument, title: string) {
+    const renamed = await renameDocument(document.id, title);
+    changeDocuments((documents) => documents.map((d) => (d.id === renamed.id ? renamed : d)));
+  }
+
   async function remove(document: SavedDocument) {
     await deleteDocument(document.id);
-    setListing((listing) =>
-      listing.status === "ready"
-        ? { status: "ready", documents: listing.documents.filter(({ id }) => id !== document.id) }
-        : listing,
-    );
+    changeDocuments((documents) => documents.filter(({ id }) => id !== document.id));
   }
+
+  const renaming = selected?.action === "rename" ? selected : null;
+  const deleting = selected?.action === "delete" ? selected : null;
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6 lg:px-8">
@@ -72,52 +88,77 @@ export function MyDocuments({ catalog, templates }: MyDocumentsProps) {
                 document={document}
                 spec={findDocument(catalog, document.documentId)}
                 templates={templates}
-                onDelete={(document, title) => setToDelete({ document, title })}
+                onSelect={setSelected}
                 onError={setError}
               />
             ))}
           </ul>
         ))}
 
+      <RenameDialog
+        open={renaming !== null}
+        title={renaming?.document.title ?? null}
+        defaultName={renaming?.defaultName ?? ""}
+        onRename={async (title) => {
+          if (renaming) await rename(renaming.document, title);
+        }}
+        onClose={() => setSelected(null)}
+      />
+
       <ConfirmDialog
-        open={toDelete !== null}
-        title={toDelete ? `Delete “${toDelete.title}”?` : ""}
+        open={deleting !== null}
+        title={deleting ? `Delete “${documentName(deleting.document.title, deleting.defaultName)}”?` : ""}
         description="It will be removed from My documents for good. This cannot be undone."
         confirmLabel="Delete"
         pendingLabel="Deleting…"
         destructive
         onConfirm={async () => {
-          if (toDelete) await remove(toDelete.document);
+          if (deleting) await remove(deleting.document);
         }}
-        onClose={() => setToDelete(null)}
+        onClose={() => setSelected(null)}
       />
     </main>
   );
+}
+
+/** A document whose Rename or Delete was clicked. */
+interface Selection {
+  action: "rename" | "delete";
+  document: SavedDocument;
+  /** What it is called until the user names it: the name of its kind of document. */
+  defaultName: string;
 }
 
 function DocumentRow({
   document,
   spec,
   templates,
-  onDelete,
+  onSelect,
   onError,
 }: {
   document: SavedDocument;
   spec: DocumentSpec | null;
   templates: Record<string, string>;
-  onDelete: (document: SavedDocument, title: string) => void;
+  onSelect: (selection: Selection) => void;
   onError: (message: string) => void;
 }) {
   const [downloading, setDownloading] = useState(false);
-  const title = spec?.name ?? document.documentId;
+  const defaultName = spec?.name ?? document.documentId;
+  const title = documentName(document.title, defaultName);
   const missing = spec ? missingFields(spec, document.values) : [];
   const href = `/draft/?id=${document.id}`;
+  // A document with a name of its own still says what kind of document it is.
+  const details = [
+    document.title ? defaultName : null,
+    partiesLabel(document.values) ?? "Parties not named yet",
+    `Updated ${formatTimestamp(document.updatedAt)}`,
+  ];
 
   async function download() {
     if (!spec) return;
     setDownloading(true);
     try {
-      await downloadDocumentPdf(spec, document.values, templates);
+      await downloadDocumentPdf(spec, document.values, templates, document.title);
     } catch (e) {
       console.error(e);
       onError(`The PDF of “${title}” could not be created. Please try again.`);
@@ -143,9 +184,7 @@ function DocumentRow({
             </span>
           )}
         </div>
-        <p className="truncate text-sm text-brand-gray">
-          {partiesLabel(document.values) ?? "Parties not named yet"} · Updated {formatTimestamp(document.updatedAt)}
-        </p>
+        <p className="truncate text-sm text-brand-gray">{details.filter(Boolean).join(" · ")}</p>
       </div>
       <div className="flex shrink-0 flex-wrap gap-2">
         <Link href={href} className={secondaryButton}>
@@ -160,9 +199,12 @@ function DocumentRow({
         >
           {downloading ? "Preparing…" : "Download PDF"}
         </button>
+        <button type="button" onClick={() => onSelect({ action: "rename", document, defaultName })} className={secondaryButton}>
+          Rename
+        </button>
         <button
           type="button"
-          onClick={() => onDelete(document, title)}
+          onClick={() => onSelect({ action: "delete", document, defaultName })}
           className={`${secondaryButton} text-red-700 hover:bg-red-50`}
         >
           Delete

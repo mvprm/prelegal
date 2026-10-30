@@ -34,7 +34,10 @@ export function DraftWorkspace({ catalog, templates }: DraftWorkspaceProps) {
 
 const NEW_DRAFT: Draft = { documentId: null, values: {} };
 
-type Loaded = { status: "loading" } | { status: "ready"; draft: Draft } | { status: "failed"; message: string };
+type Loaded =
+  | { status: "loading" }
+  | { status: "ready"; draft: Draft; title: string | null }
+  | { status: "failed"; message: string };
 
 function SavedDraft({ id, catalog, templates }: DraftWorkspaceProps & { id: string }) {
   const [loaded, setLoaded] = useState<Loaded>({ status: "loading" });
@@ -45,11 +48,11 @@ function SavedDraft({ id, catalog, templates }: DraftWorkspaceProps & { id: stri
   useEffect(() => {
     let current = true;
     getDocument(id).then(
-      ({ documentId, values }) => current && setLoaded({ status: "ready", draft: { documentId, values } }),
+      ({ documentId, values, title }) => current && setLoaded({ status: "ready", draft: { documentId, values }, title }),
       (e) => {
         if (!current) return;
         if (e instanceof ApiError && e.status === 404) {
-          setLoaded({ status: "ready", draft: NEW_DRAFT });
+          setLoaded({ status: "ready", draft: NEW_DRAFT, title: null });
         } else {
           setLoaded({ status: "failed", message: e instanceof ApiError ? e.message : GENERIC_ERROR });
         }
@@ -85,6 +88,8 @@ function SavedDraft({ id, catalog, templates }: DraftWorkspaceProps & { id: stri
         </div>
       );
     case "ready":
-      return <DraftCreator catalog={catalog} templates={templates} id={id} initialDraft={loaded.draft} />;
+      return (
+        <DraftCreator catalog={catalog} templates={templates} id={id} initialDraft={loaded.draft} title={loaded.title} />
+      );
   }
 }

@@ -88,6 +88,37 @@ export function Modal({ open, onClose, title, description, children, footer, dis
   );
 }
 
+/**
+ * The action a dialog runs (deleting, saving…): whether it is running, and if it failed,
+ * why. A failure keeps the dialog open with the reason, to try again or cancel. `close`
+ * closes the dialog (through `onClose`), forgetting the failure.
+ */
+export function useDialogAction(onClose: () => void) {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function close() {
+    setError(null);
+    onClose();
+  }
+
+  /** Runs `action`, and closes the dialog once it has succeeded. */
+  async function run(action: () => Promise<void>) {
+    setPending(true);
+    setError(null);
+    try {
+      await action();
+      close();
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return { pending, error, run, close };
+}
+
 interface ConfirmDialogProps {
   open: boolean;
   title: string;
@@ -113,26 +144,7 @@ export function ConfirmDialog({
   onConfirm,
   onClose,
 }: ConfirmDialogProps) {
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  function close() {
-    setError(null);
-    onClose();
-  }
-
-  async function confirm() {
-    setPending(true);
-    setError(null);
-    try {
-      await onConfirm();
-      close();
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setPending(false);
-    }
-  }
+  const { pending, error, run, close } = useDialogAction(onClose);
 
   return (
     <Modal
@@ -149,7 +161,7 @@ export function ConfirmDialog({
           </button>
           <button
             type="button"
-            onClick={confirm}
+            onClick={() => run(onConfirm)}
             disabled={pending}
             data-autofocus={!destructive || undefined}
             className={destructive ? destructiveButton : primaryButton}
